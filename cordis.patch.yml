@@ -1,0 +1,9 @@
+# Bundle layer contributed by @domitor-syh/dsh-ui-skin-switcher.
+# Applied by `dsh plugin add` into any profile that lists this bundle.
+#
+# Skin switcher: composer model + reasoning-effort seat over session.models /
+# session.selectModel. Mirrors the model-selection RPC face through a custom
+# skin dropdown with Off/Max effort slider.
+- insert:
+    - id: ui-skin-switcher
+      name: '@domitor-syh/dsh-ui-skin-switcher'
