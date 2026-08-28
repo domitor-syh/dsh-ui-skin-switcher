@@ -16,27 +16,27 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 
 | Feature | Detail |
 | --- | --- |
-| Model switching | Dropdown grouped by provider, one-click switch |
-| Effort slider | Off/Max two-level slider for models that declare `reasoningEfforts` |
-| Max dot matrix | Right-to-left dot-matrix sweep on the track at max effort (Claude Desktop-style) |
+| Model switching | Clicking the model entry expands the model list ordered by vendor; the selection applies immediately and the matching reasoning effort updates together |
+| Effort slider | Supports both click and drag, with multiple effort nodes; supported levels differ per model, and adjustments apply immediately |
+| Max-effort dot matrix | Reaching max effort reveals a right-to-left dot-matrix sweep on the track, with the handle glowing |
 | Per-model memory | Remembers the last effort per model, kept across switches |
 | Theme adaptive | All colors bound to DSH theme tokens; readable in light/dark themes and transparent skins |
 
 ## Screenshots
 
-**Overall** — the seat next to the input box:
+**Overall** — the button next to the input box:
 
 ![Overall](docs/screenshots/01-overall.png)
 
-**Model switcher** — provider-grouped dropdown:
+**Model switcher** — model list grouped by vendor:
 
 ![Model switcher](docs/screenshots/02-model-switcher.png)
 
-**Effort switcher (normal)** — Off/Max slider:
+**Effort switcher (normal)** — switcher style:
 
 ![Effort switcher normal](docs/screenshots/03-effort-normal.png)
 
-**Effort switcher (max)** — max level triggers the dot-matrix sweep:
+**Effort switcher (max)** — switcher style (triggers dot-matrix animation):
 
 ![Effort switcher max](docs/screenshots/04-effort-max.png)
 
@@ -48,21 +48,27 @@ With the DSH CLI installed:
 dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 ```
 
-Or from this repository (source install — pnpm runs the `prepare` build; approve it once via `allowBuilds` when prompted):
+Restart `dsh web` — the button appears next to the input box.
+
+Running dsh from source? Inside the repo root, use your launch command plus `dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher`, for example:
 
 ```sh
-dsh plugin --profile web add github:domitor-syh/dsh-ui-skin-switcher
+# Normal start
+pnpm dsh web
+# Add the plugin
+pnpm dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 ```
 
-Running dsh from a source checkout? Use `pnpm dsh plugin --profile web add ...` inside the checkout.
+### Verify & uninstall
 
-Restart `dsh web` — the seat appears next to the input box. Verify with `dsh --profile web --dump-config`; remove with `dsh plugin --profile web remove @domitor-syh/dsh-ui-skin-switcher`.
+Restart `dsh web` — the button appears next to the input box and takes effect immediately. Verify with `dsh --profile web --dump-config`.
+
+Uninstall (if running from source, uninstall the same way you installed): `dsh plugin --profile web remove @domitor-syh/dsh-ui-skin-switcher`, then restart `dsh web`.
 
 ## Usage
 
-1. **Pick a model** — click the seat and choose from the provider-grouped menu.
-2. **Dial effort** — for models declaring `reasoningEfforts`, an Off/Max slider appears above the list; drag or tap the track.
-3. **Feedback** — Max triggers the dot-matrix sweep; dragging off has a 0.5s glow fade.
+1. **Pick a model** — click the button and pick from the list; the list is grouped by vendor and the current model shows a checkmark.
+2. **Dial effort** — for models declaring `reasoningEfforts`, an effort button appears to the right of the model; click it, then drag the slider or tap the track to switch levels.
 
 ## License
 

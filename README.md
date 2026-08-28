@@ -22,27 +22,27 @@
 
 | 能力 | 说明 |
 | --- | --- |
-| 模型切换 | 悬浮座位拉开下拉菜单，按 provider 分组浏览全部模型，一键切换 |
-| 思考强度滑块 | 对声明了 `reasoningEfforts` 的模型，在模型列表上方给出 Off/Max 两档强度滑块 |
-| Max 点阵动画 | 滑到最高思考强度时，轨道内浮现从右向左扫过的点阵动画（Claude Desktop 同款视觉） |
+| 模型切换 | 点击模型入口将展开按厂商依次排列的模型列表，选定模型后立即生效，对应的思考强度也会同步变更。 |
+| 思考强度滑块 | 思考强度滑块支持点击与拖动双操作方式，设有多个强度节点；不同模型适配的强度档位存在差异，调节后立即生效。 |
+| 最高强度点阵动画 | 达到最高思考强度时，轨道内浮现从右向左扫过的点阵动画，且滑块伴随着发光 |
 | 逐模型记忆 | 记住每个模型最后一次选择的思考强度，切走再切回，强度不丢 |
 | 主题自适应 | 全部颜色绑定 DSH 主题变量，深浅主题、透明背景皮肤下都清晰可读 |
 
 ## 界面预览
 
-**整体外观**——输入框旁的模型 + 思考强度切换座位：
+**整体外观**——输入框旁的模型 + 思考强度切换按钮：
 
 ![整体外观](docs/screenshots/01-overall.png)
 
-**模型切换器**——按 provider 分组的下拉菜单：
+**模型切换器**——按不同厂商分组的模型列表：
 
 ![模型切换器](docs/screenshots/02-model-switcher.png)
 
-**普通思考强度切换器**——Off/Max 两档滑块：
+**普通思考强度**——切换器样式：
 
 ![普通思考强度切换器](docs/screenshots/03-effort-normal.png)
 
-**最高思考强度切换器**——滑到 Max 触发点阵扫过动画：
+**最高思考强度**——切换器样式(触发点阵动画)：
 
 ![最高思考强度切换器](docs/screenshots/04-effort-max.png)
 
@@ -51,7 +51,7 @@
 ### 系统要求
 
 - 已安装 DeepSeek Harness，`dsh web` 可正常启动。
-- npm 安装无额外要求；从仓库安装需要 Node.js >= 22 与 pnpm。
+- npm 安装无额外要求；从源码运行需要 Node.js >= 22 与 pnpm。
 
 ### 安装（npm，推荐）
 
@@ -59,29 +59,27 @@
 dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 ```
 
-然后重启 `dsh web`，输入框旁即出现切换器座位。
+然后重启 `dsh web`，输入框旁即出现切换器按钮。
 
-### 从仓库安装（GitHub 源码）
+从源码运行 DSH？在仓库根目录，用「启动命令 + `dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher`」即可，例如：
 
 ```sh
-dsh plugin --profile web add github:domitor-syh/dsh-ui-skin-switcher
+# 平时启动
+pnpm dsh web
+# 添加插件
+pnpm dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 ```
-
-> GitHub 安装拉取的是源码，会运行本仓库的 `prepare` 脚本现场构建。首次安装时 pnpm 会出于安全拦截构建脚本，按提示把打印出来的键加入该 profile 的 `pnpm-workspace.yaml` 的 `allowBuilds` 白名单后，重新执行即可。
-
-从源码 checkout 运行 DSH？在仓库根目录改用 `pnpm dsh plugin --profile web add ...`。
 
 ### 验证与卸载
 
-装好重启 `dsh web`，输入框旁出现切换器座位即为生效；也可以用 `dsh --profile web --dump-config` 确认插件配置层已挂载。
+装好重启 `dsh web`，输入框旁出现切换器按钮即刻生效；也可以用 `dsh --profile web --dump-config` 确认插件配置层已挂载。
 
-卸载：`dsh plugin --profile web remove @domitor-syh/dsh-ui-skin-switcher`，然后重启 `dsh web`。
+卸载(如从源码启动，请用同安装的方式去卸载)：`dsh plugin --profile web remove @domitor-syh/dsh-ui-skin-switcher`，然后重启 `dsh web`。
 
 ## 使用方法
 
-1. **切模型**：点击输入框旁的座位，在下拉菜单里选一个模型；菜单按 provider 分组，当前模型带勾选标记。
-2. **调强度**：对声明了 `reasoningEfforts` 的模型，菜单上方出现 Off/Max 滑块——拖动滑块或在轨道上点按即可切换档位。
-3. **看反馈**：滑到 Max 时轨道内亮起从右向左扫过的点阵动画，拖动过程中滑块带 0.5 秒光晕渐隐，手感顺滑。
+1. **切模型**：点击输入框旁的按钮，在列表里选一个模型；列表按厂商分组，当前模型带勾选标记。
+2. **调强度**：对声明了 `reasoningEfforts` 的模型，模型右侧会出现思考强度按钮，点击之后——拖动滑块或在轨道上点按即可切换档位。
 
 ## 常见问题
 
