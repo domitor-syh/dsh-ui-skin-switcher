@@ -70,18 +70,13 @@ Uninstall (if running from source, uninstall the same way you installed): `dsh p
 1. **Pick a model** — click the button and pick from the list; the list is grouped by vendor and the current model shows a checkmark.
 2. **Dial effort** — for models declaring `reasoningEfforts`, an effort button appears to the right of the model; click it, then drag the slider or tap the track to switch levels.
 
-## FAQ
-
-<details>
-<summary><strong>Why is there no reasoning-effort switcher after adding a model?</strong></summary>
+### Why is there no reasoning-effort switcher after adding a model?
 
 The current model does not declare a reasoning effort (`reasoningEfforts`) or vision capability. To keep model declarations accurate, we do not apply a uniform effort preset to every model — check the model vendor's official documentation and patch the underlying config file yourself, or hand the vendor's deep-thinking documentation (or its link) to the LLM and let it modify the config directly.
 
 > Taking effect: changes made by the LLM through configuration apply **immediately** with no restart; manually editing the underlying model config file requires restarting `dsh web`.
 
 We are progressively declaring reasoning efforts for models across vendors. If the effort switcher does not appear, patch it per the documentation above or wait for our incremental support.
-
-</details>
 
 ## License
 
