@@ -74,9 +74,9 @@ Uninstall (if running from source, uninstall the same way you installed): `dsh p
 
 The current model does not declare a reasoning effort (`reasoningEfforts`) or vision capability. To keep model declarations accurate, we do not apply a uniform effort preset to every model — check the model vendor's official documentation and patch the underlying config file yourself, or hand the vendor's deep-thinking documentation (or its link) to the LLM and let it modify the config directly.
 
-> Taking effect: changes made by the LLM through configuration apply **immediately** with no restart; manually editing the underlying model config file requires restarting `dsh web`.
+> Taking effect: you edit `settings.yaml` under the DSH home (`~/.dsh`) — **not this plugin's files**; DSH watches that file and hot-reloads, so the change takes effect **immediately with no restart** and persists across restarts.
 
-We are progressively declaring reasoning efforts for models across vendors. If the effort switcher does not appear, patch it per the documentation above or wait for our incremental support.
+Why do it yourself? To keep declarations accurate — **accuracy over coverage**. Reasoning effort is a per-vendor, per-level wire value; a wrong value silently breaks requests, so we never fill in a guessed preset.
 
 ## License
 
