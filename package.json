@@ -31,8 +31,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
-    "prepare": "tsdown"
+    "build": "tsdown"
   },
   "license": "MIT",
   "peerDependencies": {
