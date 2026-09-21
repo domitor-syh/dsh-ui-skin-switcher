@@ -10,9 +10,137 @@
  */
 import * as React from 'react'
 
-/** Required services: the connection RPC face (sessions) and the slot registry. */
-/** Required services: the connection RPC face (sessions models/selectModel), the runtime sessions service (subagentAddress), and the slot registry. */
-export const inject = ['connection', 'sessions', 'slots']
+/**
+ * Required services: the connection RPC face (sessions models/selectModel), the
+ * runtime sessions service (subagentAddress), the locale service (which
+ * synthesizes the seat's `t`), and the slot registry.
+ */
+export const inject = ['connection', 'locale', 'sessions', 'slots']
+
+/** Dictionary namespace owned by this plugin. */
+const NS = 'ui-skin-switcher'
+
+/** Plugin-owned copy: `zh` is the key-set source of truth, `en` mirrors it. */
+const DICTS: Record<'zh' | 'en', Record<string, string>> = {
+  zh: {
+    'trigger.fallbackModel': '模型',
+    'trigger.selectModel': '选择模型',
+    'effort.title': '思考强度',
+    'effort.default': '默认',
+    'menu.models': '模型',
+    'status.loading': '加载中…',
+    'status.noModels': '暂无可用模型',
+    'help.aria': '思考强度说明',
+    'help.text': '调节模型推理深度，低强度回复快、内容简洁；高强度思考更全面，适合复杂问题，响应会稍慢。',
+  },
+  en: {
+    'trigger.fallbackModel': 'Model',
+    'trigger.selectModel': 'Select model',
+    'effort.title': 'Reasoning effort',
+    'effort.default': 'Default',
+    'menu.models': 'Models',
+    'status.loading': 'Loading…',
+    'status.noModels': 'No models available',
+    'help.aria': 'About reasoning effort',
+    'help.text': 'Adjusts how deeply the model reasons: lower effort answers faster and more concisely, while higher effort thinks more thoroughly for complex problems and responds a little slower.',
+  },
+}
+
+/** Dot-matrix rows to render. */
+const MATRIX_ROWS = 6
+/** Designed track height in CSS px; the matrix is solved to land near it. */
+const MATRIX_TRACK_DESIGN = 26
+/** Smallest block edge, in device px, that still reads as a square rather than a dot. */
+const MATRIX_MIN_BLOCK_DEV = 3
+/** Design gap between blocks, in CSS px at 100% scaling. */
+const MATRIX_GAP_DESIGN = 1
+/** Design margin above the first and below the last block row, in CSS px. */
+const MATRIX_MARGIN_DESIGN = 0.5
+/** Flash cycle length in seconds, matching the `.sk5-sq` animation shorthand. */
+const FLASH_CYCLE_S = 1.45
+/** Per-cell cycle spread (±8%): drifts the phases apart so no pattern repeats. */
+const FLASH_JITTER = 0.08
+
+/** One resolved dot-matrix layout; every length is CSS px, derived from whole device pixels. */
+interface MatrixLayout {
+  /** Grid columns. */
+  c: number
+  /** Grid rows. */
+  r: number
+  /** Block edge. */
+  sq: number
+  /** Gap between blocks. */
+  gap: number
+  /** Block corner radius (one device pixel). */
+  radius: number
+  /** Track height the layout needs: both margins, the blocks and the gaps. */
+  trackHeight: number
+  /** Edge margins, applied as padding so both ends show the same gap. */
+  padTop: number
+  padBottom: number
+  padLeft: number
+  padRight: number
+}
+
+/**
+ * Resolve the dot-matrix grid in whole device pixels. Rounding the sizes here —
+ * instead of handing the browser a fractional remainder — is what keeps the
+ * matrix uniform: a fractional pitch rasterizes as alternating 7/8px gaps, and
+ * a centered fractional remainder leaves one edge with a different gap.
+ *
+ * The matrix carries no vertical margin: `rows * block + (rows - 1) * gap` is
+ * both the content and the track height, so the first row starts at the track's
+ * top edge and the last row ends at its bottom edge. The track is re-heighted to
+ * that value because a fixed 26px track is 39 device px at 150%, which no
+ * six-row arrangement fills with square blocks and a one-pixel gap.
+ * @param wDev - track width in whole device pixels.
+ * @param dpr - device pixels per CSS px.
+ * @returns the resolved layout.
+ */
+function solveMatrix(wDev: number, dpr: number): MatrixLayout {
+  const gap = Math.max(1, Math.round(MATRIX_GAP_DESIGN * dpr))
+  const margin = Math.max(1, Math.round(MATRIX_MARGIN_DESIGN * dpr))
+  const rows = MATRIX_ROWS
+  // Solve the block back from the designed track height in whole device pixels:
+  // margins and gaps grow while the track keeps its size, so every block stays a
+  // square of the same edge and every space the same width.
+  const block = Math.max(MATRIX_MIN_BLOCK_DEV,
+    Math.round((MATRIX_TRACK_DESIGN * dpr - 2 * margin - (rows - 1) * gap) / rows))
+  const cols = Math.max(1, Math.floor((wDev + gap) / (block + gap)))
+  const restX = wDev - (cols * block + (cols - 1) * gap)
+  const padX = Math.floor(restX / 2)
+  return {
+    c: cols,
+    r: rows,
+    sq: block / dpr,
+    gap: gap / dpr,
+    radius: 1 / dpr,
+    trackHeight: (2 * margin + rows * block + (rows - 1) * gap) / dpr,
+    padTop: margin / dpr,
+    padBottom: margin / dpr,
+    padLeft: padX / dpr,
+    padRight: (restX - padX) / dpr,
+  }
+}
+
+/**
+ * Scatter one cell's phase. A linear rule such as `(7r + 13c) % 29` maps
+ * neighbours onto a regular lattice, which the eye reads as diagonal bands;
+ * avalanching both coordinates first scatters them instead. The result stays
+ * continuous rather than quantised into buckets: with 29 buckets up to 14 cells
+ * share a phase and flip in the very same instant, every round — a synchrony
+ * the eye picks up even though the arrangement itself is random.
+ * @param r - grid row.
+ * @param c - grid column.
+ * @param seed - keeps independent scatters (phase, brightness) uncorrelated.
+ * @returns a value in `[0, 1)`.
+ */
+function cellUnit(r: number, c: number, seed: number): number {
+  let h = Math.imul(r + 1, 0x9e3779b1) ^ Math.imul(c + 1, 0x85ebca6b) ^ Math.imul(seed, 0x27d4eb2f)
+  h = Math.imul(h ^ (h >>> 15), 0x2545f491)
+  h ^= h >>> 13
+  return (h >>> 0) / 4294967296
+}
 
 /** Insert one stylesheet and return its disposer. */
 function injectCss(css: string): () => void {
@@ -83,13 +211,15 @@ const CSS =
   '.sk5-dotHit{position:absolute;top:0;bottom:0;width:16px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}' +
   '.sk5-dot{width:4px;height:4px;border-radius:50%;background:var(--dsw-alias-label-primary);opacity:.9;pointer-events:none;transition:transform .12s ease,opacity .12s ease;}' +
   '.sk5-dotHit:hover .sk5-dot{opacity:1;transform:scale(1.2);}' +
+  '.sk5-dotMax{background:var(--dsw-static-deepseek-400);}' +
   '.sk5-handle{position:absolute;top:0;bottom:0;width:20px;border-radius:6px;background:var(--dsw-alias-label-primary);transform:translateX(-50%);box-shadow:0 0 0 transparent;transition:left .16s ease,box-shadow .5s ease,background-color .5s ease;z-index:3;cursor:grab;}' +
   '.sk5-handleMax{background:color-mix(in srgb, var(--dsw-static-deepseek-450) 25%, var(--dsw-alias-label-primary));box-shadow:0 0 10px color-mix(in srgb, var(--dsw-static-deepseek-400) 90%, transparent);}' +
-  '.sk5-matrix{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;border-radius:6px;pointer-events:none;z-index:1;box-sizing:border-box;display:grid;gap:2px;justify-content:center;align-content:center;}' +
+  '.sk5-matrix{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;border-radius:6px;pointer-events:none;z-index:1;box-sizing:border-box;display:grid;gap:1px;justify-content:start;align-content:start;}' +
   '.sk5-cell{width:100%;height:100%;opacity:0;animation:sk5-appear .15s ease forwards;}' +
   '@keyframes sk5-appear{from{opacity:0}to{opacity:1}}' +
-  '.sk5-sq{width:100%;height:100%;border-radius:1px;animation:sk5-flash 1s infinite ease-in-out;}' +
-  '@keyframes sk5-flash{0%,24%{background-color:var(--dsw-static-deepseek-500)}28%,72%{background-color:var(--flash-light,var(--dsw-static-deepseek-400))}76%,100%{background-color:var(--dsw-static-deepseek-500)}}'
+  '.sk5-sq{width:100%;height:100%;border-radius:1px;animation:sk5-flash 1.45s infinite ease-in-out;}' +
+  '/* One flash cycle: hold blue 250ms, jump to light, hold light 480ms, fade back over 720ms. */' +
+  '@keyframes sk5-flash{0%,17.24%{background-color:var(--dsw-static-deepseek-500)}17.25%,50.34%{background-color:var(--flash-light,var(--dsw-static-deepseek-400))}100%{background-color:var(--dsw-static-deepseek-500)}}'
 
 /** Per-model (provider\u0000model) effort memory, shared across the whole page. */
 const effortMemory = new Map<string, string | undefined>()
@@ -118,18 +248,24 @@ export function apply(ctx: any): void {
   }
 
   ctx.effect(() => injectCss(CSS))
+  ctx.effect(() => ctx.locale.register(NS, DICTS), 'ui-skin-switcher: dictionaries')
 
   ctx.slots.inject('conversation.input.model', () => ctx.slots.register(
-    { name: 'conversation.input.model', priority: -1 },
+    { name: 'conversation.input.model', priority: -1, locale: NS },
     (props: any) => {
-      const { locked, sessionId } = props
+      const { locked, sessionId, t } = props
+      /**
+       * Read one dictionary key through the framework-injected `t` seat; the
+       * Chinese table backs a host that shipped no locale service.
+       */
+      const tr = (key: string): string => (typeof t === 'function' ? t(key) : (DICTS.zh[key] ?? key))
 
       const [menu, setMenu] = React.useState<any>(null)
       const [data, setData] = React.useState<any>(null)
       const [busy, setBusy] = React.useState(false)
       const [error, setError] = React.useState<any>(null)
       const [hoverIdx, setHoverIdx] = React.useState<any>(null)
-      const [grid, setGrid] = React.useState({ c: 0, r: 0 })
+      const [grid, setGrid] = React.useState<MatrixLayout | null>(null)
       const rootRef = React.useRef<any>(null)
       const trackRef = React.useRef<any>(null)
       const dragIdxRef = React.useRef<any>(null)
@@ -137,8 +273,7 @@ export function apply(ctx: any): void {
       const pendingRef = React.useRef<any>(null)
       const [settledIdx, setSettledIdx] = React.useState<any>(null)
 
-      const SQ = 4
-      const GAP = 2
+      /** Composer trigger row owns this width; the slider handle spans half of it. */
       const HANDLE_W = 20
 
       const load = () => {
@@ -168,11 +303,18 @@ export function apply(ctx: any): void {
         if (menu !== 'effort') return
         const measure = () => {
           if (trackRef.current !== null) {
-            const w = trackRef.current.clientWidth
-            const h = trackRef.current.clientHeight
-            const cn = Math.max(1, Math.floor((w + GAP) / (SQ + GAP)))
-            const rn = Math.max(1, Math.floor((h + GAP) / (SQ + GAP)))
-            setGrid(g => (g.c === cn && g.r === rn) ? g : { c: cn, r: rn })
+            // Sub-pixel precision matters here: clientWidth rounds to whole CSS
+            // px, and the column count is solved from device pixels.
+            const rect = trackRef.current.getBoundingClientRect()
+            const w = rect.width
+            const dpr = window.devicePixelRatio > 0 ? window.devicePixelRatio : 1
+            const next = solveMatrix(Math.floor(w * dpr), dpr)
+            setGrid(g => (g !== null
+              && g.c === next.c && g.r === next.r && g.sq === next.sq && g.gap === next.gap
+              && g.padTop === next.padTop && g.padBottom === next.padBottom
+              && g.padLeft === next.padLeft && g.padRight === next.padRight)
+              ? g
+              : next)
           }
         }
         measure()
@@ -224,13 +366,13 @@ export function apply(ctx: any): void {
       const current = data === null ? null : data.current
       const curGroup = current === null ? undefined : groups.find((g: any) => g.id === current.provider)
       const curModel = current === null ? undefined : findModel(groups, current.provider, current.model)
-      const modelLabel = curModel !== undefined ? curModel.name : (current !== null && current.model !== '' ? current.model : '模型')
+      const modelLabel = curModel !== undefined ? curModel.name : (current !== null && current.model !== '' ? current.model : tr('trigger.fallbackModel'))
       const reasoning = curModel !== undefined ? curModel.reasoning : undefined
       const effectiveEffort = (current !== null && current.reasoningEffort !== undefined)
         ? current.reasoningEffort
         : (reasoning !== undefined && reasoning.defaultEffort !== undefined ? reasoning.defaultEffort : undefined)
       const choices = reasoning === undefined ? [] : [
-        ...(reasoning.defaultEffort === undefined ? [{ key: 'default', effort: undefined, label: '默认' }] : []),
+        ...(reasoning.defaultEffort === undefined ? [{ key: 'default', effort: undefined, label: tr('effort.default') }] : []),
         ...reasoning.efforts.map((e: any) => ({ key: 'e:' + e.id, effort: e.id, label: e.name })),
       ]
       const activeKey = effectiveEffort === undefined ? 'default' : 'e:' + effectiveEffort
@@ -241,15 +383,22 @@ export function apply(ctx: any): void {
       const displayIdx = settledIdx === null ? activeIdx : settledIdx
       const safeDisplayIdx = choices.length > 0 ? Math.max(0, Math.min(choices.length - 1, displayIdx)) : 0
       const displayChoice = choices.length > 0 ? choices[safeDisplayIdx] : null
-      const displayLabel = displayChoice !== null ? displayChoice.label : '默认'
+      const displayLabel = displayChoice !== null ? displayChoice.label : tr('effort.default')
       const inMax = choices.length > 1 && safeDisplayIdx === choices.length - 1
       const matrixVisible = inMax && atMaxPos
       const posPct = choices.length > 1 ? (posIdx / (choices.length - 1)) * 100 : 0
 
       const matrixCells = React.useMemo(() => {
-        if (!inMax || grid.c <= 0 || grid.r <= 0) return []
+        if (!inMax || grid === null) return []
         const deep = [65, 118, 230]
         const lightMax = [103, 158, 254]
+        /**
+         * How far the lightest cells reach past deepseek-400 (103,158,254)
+         * toward deepseek-300 (183,200,254): a small lift reads lighter without
+         * going pale. This is the knob for "a touch lighter".
+         */
+        const lightLift = 0.3
+        const lightPeak = lightMax.map((v, i) => Math.round(v + ([183, 200, 254][i]! - v) * lightLift))
         const revealMs = 1000
         const revealCycles = 3
         const revealDepth = 0.6
@@ -274,9 +423,20 @@ export function apply(ctx: any): void {
         const out: any[] = []
         for (let r = 0; r < grid.r; r++) {
           for (let c = 0; c < grid.c; c++) {
-            const k = 0.45 + ((r * 37 + c * 53) % 51) / 100
-            const lc = deep.map((v, i) => Math.round(v + (lightMax[i]! - v) * k))
-            const flashDelay = (((r * 7 + c * 13) % 29) * 0.034).toFixed(3) + 's'
+            const k = 0.45 + cellUnit(r, c, 1) * 0.5
+            const lc = deep.map((v, i) => Math.round(v + (lightPeak[i]! - v) * k))
+            // Scattered phases, not a lattice: the phases stay continuous, and
+            // every delay is non-negative so each cell enters on the base blue.
+            // The 350ms lead-in defers the first round only, while the steady
+            // cycle keeps its 250ms blue hold.
+            const flashDelay = (cellUnit(r, c, 2) * 1.38 + 0.35).toFixed(3) + 's'
+            /**
+             * Per-cell cycle length, jittered around the stylesheet's 1.45s base.
+             * With one shared duration every cell keeps a fixed phase, so the
+             * whole pattern repeats exactly each round and a local area replays
+             * the same order; the spread drifts the phases apart instead.
+             */
+            const flashDuration = (FLASH_CYCLE_S * (1 - FLASH_JITTER + cellUnit(r, c, 3) * 2 * FLASH_JITTER)).toFixed(3) + 's'
             const fx = grid.c > 1 ? c / (grid.c - 1) : 0
             const u = grid.c > 1 ? (grid.c - 1 - c) / (grid.c - 1) : 0
             const appearDelay = ((revealMs * (integrate(u, phases[r]!) / fulls[r]!)) / 1000).toFixed(3) + 's'
@@ -284,6 +444,7 @@ export function apply(ctx: any): void {
               key: r + '-' + c,
               flashLight: 'rgb(' + lc[0] + ',' + lc[1] + ',' + lc[2] + ')',
               animationDelay: flashDelay,
+              flashDuration: flashDuration,
               appearDelay: appearDelay,
               fade: fadeAt(fx),
             })
@@ -372,7 +533,7 @@ export function apply(ctx: any): void {
 
       const triggerTitle = curGroup !== undefined && curModel !== undefined
         ? curGroup.name + ' / ' + curModel.name + (effectiveEffort !== undefined ? ' · ' + displayLabel : '')
-        : '选择模型'
+        : tr('trigger.selectModel')
 
       return React.createElement('div', { ref: rootRef, className: 'sk5-root' },
         React.createElement('div', { className: 'sk5-triggers' },
@@ -384,19 +545,19 @@ export function apply(ctx: any): void {
           reasoning !== undefined && choices.length > 0
             ? React.createElement('button', {
                 type: 'button', className: 'sk5-trigger sk5-triggerEffort',
-                disabled: locked || busy || current === null, title: '思考强度',
+                disabled: locked || busy || current === null, title: tr('effort.title'),
                 'aria-haspopup': 'menu', 'aria-expanded': menu === 'effort',
                 onClick: () => setMenu((m: any) => (m === 'effort' ? null : 'effort')),
               }, React.createElement('span', { key: displayLabel, style: { animation: 'sk5-nameBlur .28s ease' } }, displayLabel))
             : null,
         ),
         menu === 'model'
-          ? React.createElement('div', { className: 'sk5-drop sk5-model', role: 'menu', 'aria-label': '选择模型' },
-              React.createElement('div', { className: 'sk5-modelsTitle' }, 'Models'),
+          ? React.createElement('div', { className: 'sk5-drop sk5-model', role: 'menu', 'aria-label': tr('trigger.selectModel') },
+              React.createElement('div', { className: 'sk5-modelsTitle' }, tr('menu.models')),
               React.createElement('div', { className: 'sk5-list' },
-                data === null && error === null ? React.createElement('div', { className: 'sk5-status' }, '加载中…') : null,
+                data === null && error === null ? React.createElement('div', { className: 'sk5-status' }, tr('status.loading')) : null,
                 data === null && error !== null ? React.createElement('div', { className: 'sk5-err' }, error) : null,
-                data !== null && groups.length === 0 ? React.createElement('div', { className: 'sk5-status' }, '暂无可用模型') : null,
+                data !== null && groups.length === 0 ? React.createElement('div', { className: 'sk5-status' }, tr('status.noModels')) : null,
                 data !== null ? groups.map((g: any) => React.createElement('div', { key: g.id },
                   React.createElement('div', { className: 'sk5-group' }, g.name),
                   g.models.map((m: any) => {
@@ -417,7 +578,7 @@ export function apply(ctx: any): void {
             )
           : null,
         menu === 'effort'
-          ? React.createElement('div', { className: 'sk5-drop sk5-effort', role: 'menu', 'aria-label': '思考强度' },
+          ? React.createElement('div', { className: 'sk5-drop sk5-effort', role: 'menu', 'aria-label': tr('effort.title') },
               React.createElement('div', { className: 'sk5-titleRow' },
                 React.createElement('span', { className: 'sk5-effortLabel' }, 'Effort'),
                 React.createElement('span', {
@@ -426,10 +587,10 @@ export function apply(ctx: any): void {
                   style: { animation: 'sk5-nameBlur .28s ease' },
                 }, displayLabel),
                 React.createElement('div', { className: 'sk5-help' },
-                  React.createElement('button', { type: 'button', className: 'sk5-helpBtn', 'aria-label': '思考强度说明' }, '?'),
+                  React.createElement('button', { type: 'button', className: 'sk5-helpBtn', 'aria-label': tr('help.aria') }, '?'),
                   React.createElement('div', { className: 'sk5-helpTip' },
-                    React.createElement('div', { className: 'sk5-helpTitle' }, '思考强度'),
-                    React.createElement('div', { className: 'sk5-helpText' }, '调节模型推理深度，低强度回复快、内容简洁；高强度思考更全面，适合复杂问题，响应会稍慢。'),
+                    React.createElement('div', { className: 'sk5-helpTitle' }, tr('effort.title')),
+                    React.createElement('div', { className: 'sk5-helpText' }, tr('help.text')),
                   ),
                 ),
               ),
@@ -437,23 +598,31 @@ export function apply(ctx: any): void {
                 React.createElement('span', { className: 'sk5-endLabel' }, 'Faster'),
                 React.createElement('span', { className: 'sk5-endLabel' }, 'Smarter'),
               ),
-              React.createElement('div', { ref: trackRef, className: 'sk5-track', onPointerDown: onTrackDown as any },
+              React.createElement('div', {
+                ref: trackRef, className: 'sk5-track',
+                style: grid === null ? undefined : { height: grid.trackHeight + 'px' },
+                onPointerDown: onTrackDown as any,
+              },
                 React.createElement('div', {
                   className: 'sk5-fill',
                   style: { width: fillWidth, background: fillSolid, opacity: fillHidden ? 0 : 1, borderRadius: posPct > 96 ? 6 : '6px 0 0 6px' },
                 }),
-                matrixVisible && grid.c > 0 && grid.r > 0
+                matrixVisible && grid !== null
                   ? React.createElement('div', {
                       className: 'sk5-matrix',
                       style: {
-                        gridTemplateColumns: 'repeat(' + grid.c + ',' + SQ + 'px)',
-                        gridTemplateRows: 'repeat(' + grid.r + ',' + SQ + 'px)',
+                        gridTemplateColumns: 'repeat(' + grid.c + ',' + grid.sq + 'px)',
+                        gridTemplateRows: 'repeat(' + grid.r + ',' + grid.sq + 'px)',
+                        gap: grid.gap + 'px',
+                        padding: grid.padTop + 'px ' + grid.padRight + 'px ' + grid.padBottom + 'px ' + grid.padLeft + 'px',
+                        justifyContent: 'start',
+                        alignContent: 'start',
                       },
                     },
                       matrixCells.map((sq: any) => React.createElement('div', { key: sq.key, className: 'sk5-cell', style: { animationDelay: sq.appearDelay } },
                         React.createElement('div', {
                           className: 'sk5-sq',
-                          style: { background: 'var(--dsw-static-deepseek-500)', opacity: sq.fade, animationDelay: sq.animationDelay, '--flash-light': sq.flashLight },
+                          style: { background: 'var(--dsw-static-deepseek-500)', opacity: sq.fade, animationDelay: sq.animationDelay, animationDuration: sq.flashDuration, borderRadius: grid.radius + 'px', '--flash-light': sq.flashLight },
                         }),
                       )),
                     )
@@ -461,7 +630,9 @@ export function apply(ctx: any): void {
                 !inMax
                   ? choices.map((c: any, i: number) => React.createElement('span', {
                       key: c.key, className: 'sk5-dotHit', style: { left: dotLeft(i) },
-                    }, React.createElement('span', { className: 'sk5-dot' })))
+                    }, React.createElement('span', {
+                      className: 'sk5-dot' + (i === choices.length - 1 ? ' sk5-dotMax' : ''),
+                    })))
                   : null,
                 React.createElement('div', { className: 'sk5-handle' + (inMax ? ' sk5-handleMax' : ''), style: { left: handleLeft } }),
               ),
