@@ -1,10 +1,10 @@
 <h1 align="center">@domitor-syh/dsh-ui-skin-switcher</h1>
 
-<p align="center"><a href="./README.md">中文</a> | English</p>
-
 <p align="center">
   <img src="docs/README-Banner.jpeg" alt="dsh-ui-skin-switcher" width="100%">
 </p>
+
+<p align="center"><a href="./README.md">中文</a> | English</p>
 
 A **Claude Desktop-style switcher** plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) Web GUI: a floating "seat" next to the input box for picking a model and dialing reasoning effort — dropdown for models, slider for effort.
 

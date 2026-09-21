@@ -1,10 +1,10 @@
 <h1 align="center">dsh-ui-skin-switcher · DeepSeek Harness（DSH）模型与思考强度切换器</h1>
 
-<p align="center">中文 | <a href="README.en.md">English</a></p>
-
 <p align="center">
   <img src="docs/README-Banner.jpeg" alt="dsh-ui-skin-switcher" width="100%">
 </p>
+
+<p align="center">中文 | <a href="README.en.md">English</a></p>
 
 一个为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）Web 端打造的、**Claude Desktop 同款风格的切换器**插件：把模型选择与思考强度（推理力度）切换做成输入框旁的一枚悬浮「座位」，下拉选模型、滑动调强度，一键到位。
 
