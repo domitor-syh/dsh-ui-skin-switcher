@@ -8,7 +8,7 @@
 
 A **Claude Desktop-style switcher** plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) Web GUI: a floating "seat" next to the input box for picking a model and dialing reasoning effort — dropdown for models, slider for effort.
 
-> **Compatibility**: requires **DSH 0.1.5 or newer**. On DSH 0.1.4 and earlier use the plugin's `0.1.0` (see [Compatibility](#compatibility)).
+> **Compatibility**: supports **DSH 0.1.5 and newer** only.
 
 ## What it is
 
@@ -48,12 +48,9 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 
 ## Compatibility
 
-| Plugin | Supported DSH | Notes |
-| --- | --- | --- |
-| **0.2.0** | **0.1.5 or newer** | Uses the `ctx.remote.session` / `ctx.modelDirectories` interfaces introduced in 0.1.5 — the same source the first-party `/model` panel renders. |
-| 0.1.0 | 0.1.4 and earlier | Uses the old `connection.api` face. **On DSH 0.1.5 it takes the whole Web GUI down — do not use it there.** |
+Supports **DSH 0.1.5 and newer** only.
 
-DSH 0.1.5 removed the `dsh-client-ui-slots` package and the `connection.api` service, and renamed the model directory method from `sessions.models` to `session.modelCatalog`, so 0.1.0 and 0.2.0 are **not interchangeable**: upgrade this plugin together with DSH.
+It reads the model directory and the current selection through the `ctx.remote.session` / `ctx.modelDirectories` interfaces introduced in DSH 0.1.5 — the same source the first-party `/model` panel renders — so it cannot load on earlier DSH versions.
 
 ## Install
 

@@ -8,7 +8,7 @@
 
 一个为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）Web 端打造的、**Claude Desktop 同款风格的切换器**插件：把模型选择与思考强度（推理力度）切换做成输入框旁的一枚悬浮「座位」，下拉选模型、滑动调强度，一键到位。
 
-> **兼容性**：需要 **DSH 0.1.5 或更高**。DSH 0.1.4 及更早版本请改用插件 `0.1.0`（详见[兼容性](#兼容性)）。
+> **兼容性**：仅支持 **DSH 0.1.5 及以上版本**。
 
 <div align="center">
 
@@ -54,18 +54,15 @@
 
 ## 兼容性
 
-| 插件版本 | 支持的 DSH | 说明 |
-| --- | --- | --- |
-| **0.2.0** | **0.1.5 或更高** | 使用 0.1.5 引入的 `ctx.remote.session` / `ctx.modelDirectories` 接口读取模型目录与当前选择，与官方 `/model` 面板同源。 |
-| 0.1.0 | 0.1.4 及更早 | 使用旧的 `connection.api` 接口。**在 DSH 0.1.5 上会导致 Web 端整体无法加载，请勿在 0.1.5+ 上使用。** |
+仅支持 **DSH 0.1.5 及以上版本**。
 
-DSH 0.1.5 移除了 `dsh-client-ui-slots` 包与 `connection.api` 服务，并把模型目录方法由 `sessions.models` 改名为 `session.modelCatalog`，因此 0.1.0 与 0.2.0 之间**不通用**：升级 DSH 后请同步升级本插件，反之亦然。
+本插件通过 DSH 0.1.5 引入的 `ctx.remote.session` / `ctx.modelDirectories` 接口读取模型目录与当前选择（与官方 `/model` 面板同源），在更早的 DSH 上无法加载。
 
 ## 快速上手
 
 ### 系统要求
 
-- DSH **0.1.5 或更高**（DSH 0.1.4 及更早请使用插件 `0.1.0`）。
+- DSH **0.1.5 及以上版本**。
 - 已安装 DeepSeek Harness，`dsh web` 可正常启动。
 - npm 安装无额外要求；从源码运行需要 Node.js >= 22 与 pnpm。
 
