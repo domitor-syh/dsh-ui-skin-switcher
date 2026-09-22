@@ -1,0 +1,13 @@
+# Local development overlay.
+#
+# Loads this working copy straight into a running dsh — no `dsh plugin add`, no
+# profile dependency, and therefore no pnpm release-age gate:
+#
+#   pnpm run build
+#   dsh --profile <any profile> --patch <this file> --no-open
+#
+# The browser half is served from lib/client.js in this directory, so the loop is
+# edit -> pnpm run build -> refresh the page.
+- insert:
+    - id: ui-skin-switcher
+      name: './lib/index.js'
