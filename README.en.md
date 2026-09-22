@@ -8,11 +8,13 @@
 
 A **Claude Desktop-style switcher** plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) Web GUI: a floating "seat" next to the input box for picking a model and dialing reasoning effort — dropdown for models, slider for effort.
 
+> **Compatibility**: requires **DSH 0.1.5 or newer**. On DSH 0.1.4 and earlier use the plugin's `0.1.0` (see [Compatibility](#compatibility)).
+
 ## What it is
 
 `dsh-ui-skin-switcher` registers the `conversation.input.model` slot and renders a model + reasoning-effort switcher seat next to the composer input.
 
-It rides the exact same channel the first-party selector uses: it reads the provider-grouped model directory through `session.models` and submits through `session.selectModel`, so a switch made here is what `/model` shows next and takes effect on the current session.
+It rides the exact same channel the first-party selector uses: it reads the provider-grouped model directory and the current selection through `ctx.modelDirectories` — the same source the `/model` panel renders — and submits through that same selection call, so a switch made here is what `/model` shows next and takes effect on the current session.
 
 The style pays homage to Claude Desktop's switcher — slider feel, rounded track, hover highlight.
 
@@ -43,6 +45,15 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 **Effort switcher (max)** — switcher style (triggers dot-matrix animation):
 
 ![Effort switcher max](docs/screenshots/04-effort-max.png)
+
+## Compatibility
+
+| Plugin | Supported DSH | Notes |
+| --- | --- | --- |
+| **0.2.0** | **0.1.5 or newer** | Uses the `ctx.remote.session` / `ctx.modelDirectories` interfaces introduced in 0.1.5 — the same source the first-party `/model` panel renders. |
+| 0.1.0 | 0.1.4 and earlier | Uses the old `connection.api` face. **On DSH 0.1.5 it takes the whole Web GUI down — do not use it there.** |
+
+DSH 0.1.5 removed the `dsh-client-ui-slots` package and the `connection.api` service, and renamed the model directory method from `sessions.models` to `session.modelCatalog`, so 0.1.0 and 0.2.0 are **not interchangeable**: upgrade this plugin together with DSH.
 
 ## Install
 
