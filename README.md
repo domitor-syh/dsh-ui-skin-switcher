@@ -36,21 +36,15 @@
 
 ## 界面预览
 
-**整体外观**——输入框旁的模型 + 思考强度切换按钮：
+<p align="center">
+  <video src="docs/dsh-ui-skin-switcher.mp4" poster="docs/screenshots/01-overall.png" controls muted loop playsinline width="100%"></video>
+</p>
 
-![整体外观](docs/screenshots/01-overall.png)
+<p align="center">
+  <a href="docs/dsh-ui-skin-switcher.mp4"><img src="docs/screenshots/01-overall.png" alt="演示视频：模型与思考强度切换器" width="100%"></a>
+</p>
 
-**模型切换器**——按不同厂商分组的模型列表：
-
-![模型切换器](docs/screenshots/02-model-switcher.png)
-
-**普通思考强度**——切换器样式：
-
-![普通思考强度切换器](docs/screenshots/03-effort-normal.png)
-
-**最高思考强度**——切换器样式(触发点阵动画)：
-
-![最高思考强度切换器](docs/screenshots/04-effort-max.png)
+**▶︎ [点击观看完整演示视频](docs/dsh-ui-skin-switcher.mp4)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。
 
 ## 兼容性
 

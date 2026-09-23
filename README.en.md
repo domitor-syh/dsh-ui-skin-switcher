@@ -30,21 +30,15 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 
 ## Screenshots
 
-**Overall** — the button next to the input box:
+<p align="center">
+  <video src="docs/dsh-ui-skin-switcher.mp4" poster="docs/screenshots/01-overall.png" controls muted loop playsinline width="100%"></video>
+</p>
 
-![Overall](docs/screenshots/01-overall.png)
+<p align="center">
+  <a href="docs/dsh-ui-skin-switcher.mp4"><img src="docs/screenshots/01-overall.png" alt="Demo video: model and reasoning-effort switcher" width="100%"></a>
+</p>
 
-**Model switcher** — model list grouped by vendor:
-
-![Model switcher](docs/screenshots/02-model-switcher.png)
-
-**Effort switcher (normal)** — switcher style:
-
-![Effort switcher normal](docs/screenshots/03-effort-normal.png)
-
-**Effort switcher (max)** — switcher style (triggers dot-matrix animation):
-
-![Effort switcher max](docs/screenshots/04-effort-max.png)
+**▶︎ [Watch the full demo video](docs/dsh-ui-skin-switcher.mp4)** — model switching, the effort slider, and the top-level dot-matrix animation.
 
 ## Compatibility
 
