@@ -28,7 +28,7 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 | Per-model memory | Remembers the last effort per model, kept across switches |
 | Theme adaptive | All colors bound to DSH theme tokens; readable in light/dark themes and transparent skins |
 
-## Screenshots
+## Video preview
 
 <p align="center">
   <video src="docs/dsh-ui-skin-switcher.mp4" poster="docs/screenshots/01-overall.png" controls muted loop playsinline width="100%"></video>
