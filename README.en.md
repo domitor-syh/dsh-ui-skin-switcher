@@ -31,11 +31,7 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 ## Video preview
 
 <p align="center">
-  <video src="docs/dsh-ui-skin-switcher.mp4" poster="docs/screenshots/01-overall.png" controls muted loop playsinline width="100%"></video>
-</p>
-
-<p align="center">
-  <a href="docs/dsh-ui-skin-switcher.mp4"><img src="docs/screenshots/01-overall.png" alt="Demo video: model and reasoning-effort switcher" width="100%"></a>
+  <video src="https://github.com/user-attachments/assets/5fadc536-b58c-42db-a270-9ca5d4b02cbb" controls muted loop playsinline width="100%"></video>
 </p>
 
 **▶︎ [Watch the full demo video](docs/dsh-ui-skin-switcher.mp4)** — model switching, the effort slider, and the top-level dot-matrix animation.
