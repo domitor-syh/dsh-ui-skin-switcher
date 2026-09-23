@@ -55,7 +55,16 @@
 ## 兼容性
 
 仅支持 **DSH 0.1.5 及以上版本**。
+| DSH 版本 | 可用 | 说明 |
+| --- | :---: | --- |
+| 0.1.5-alpha.1 ～ 0.1.5-rc.3 | ✅ | 0.1.5 系列全系可用；已抽点校验 alpha.1、rc.2（端到端实测）、rc.3 |
+| 0.1.6-alpha.1 / alpha.2 | ✅ | 与 0.1.5 同代接口 |
+| 0.1.7-alpha.1 / alpha.2 | ✅ | 当前最新发布线；已抽点校验 alpha.2 |
+| 0.1.3-alpha.2 及更早 | ❌ | 旧一代接口，只有 `connection.api`，没有 `remote.session` |
 
+分界线是 **0.1.5**：从这一版起，DSH 用 `ctx.remote.session` / `ctx.modelDirectories` 取代了旧的 `connection.api` 接口，并移除了 `dsh-client-ui-slots` 依赖。本插件基于新接口实现，因此在更早的 DSH 上无法加载。
+
+> 上表依据：对相应版本的 `dsh-client-ui-model-selection` 包逐一解包，校验 `modelDirectories` / `modelCatalog` / `selectModel` 接口是否存在；并在 0.1.5-rc.2 上完成端到端实测。
 本插件通过 DSH 0.1.5 引入的 `ctx.remote.session` / `ctx.modelDirectories` 接口读取模型目录与当前选择（与官方 `/model` 面板同源），在更早的 DSH 上无法加载。
 
 ## 快速上手
