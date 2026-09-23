@@ -40,7 +40,7 @@
   <video src="https://github.com/user-attachments/assets/5fadc536-b58c-42db-a270-9ca5d4b02cbb" controls muted loop playsinline width="100%"></video>
 </p>
 
-**▶︎ [点击观看完整演示视频](docs/dsh-ui-skin-switcher.mp4)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。
+**▶︎ [点击观看完整演示视频](https://github.com/user-attachments/assets/5fadc536-b58c-42db-a270-9ca5d4b02cbb)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。
 
 ## 兼容性
 
