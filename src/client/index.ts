@@ -47,9 +47,9 @@ const DICTS: Record<'zh' | 'en', Record<string, string>> = {
 }
 
 /** Dot-matrix rows to render. */
-const MATRIX_ROWS = 6
+const MATRIX_ROWS = 5
 /** Designed track height in CSS px; the matrix is solved to land near it. */
-const MATRIX_TRACK_DESIGN = 26
+const MATRIX_TRACK_DESIGN = 23
 /** Smallest block edge, in device px, that still reads as a square rather than a dot. */
 const MATRIX_MIN_BLOCK_DEV = 3
 /** Design gap between blocks, in CSS px at 100% scaling. */
@@ -57,7 +57,7 @@ const MATRIX_GAP_DESIGN = 1
 /** Design margin above the first and below the last block row, in CSS px. */
 const MATRIX_MARGIN_DESIGN = 0.5
 /** Flash cycle length in seconds, matching the `.sk5-sq` animation shorthand. */
-const FLASH_CYCLE_S = 1.45
+const FLASH_CYCLE_S = 1.7
 /** Per-cell cycle spread (±8%): drifts the phases apart so no pattern repeats. */
 const FLASH_JITTER = 0.08
 
@@ -116,7 +116,10 @@ function solveMatrix(wDev: number, dpr: number): MatrixLayout {
     r: rows,
     sq: block / dpr,
     gap: gap / dpr,
-    radius: 1 / dpr,
+    // Rounded squares: a fraction of the block edge. Kept continuous on purpose:
+    // rounding it to whole device pixels made the radius jump a fifth of the
+    // block at a time, so a 0.01 tweak did nothing until it crossed a step.
+    radius: (block * 0.3) / dpr,
     trackHeight: (2 * margin + rows * block + (rows - 1) * gap) / dpr,
     trackWDev: wDev,
     padTop: margin / dpr,
@@ -212,7 +215,7 @@ const CSS =
   '@keyframes sk5-nameBlur{from{filter:blur(5px);opacity:.3}to{filter:blur(0);opacity:1}}' +
   '.sk5-labelsRow{display:flex;justify-content:space-between;margin-bottom:6px;}' +
   '.sk5-endLabel{font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-secondary);}' +
-  '.sk5-track{position:relative;height:26px;border-radius:9px!important;background:color-mix(in srgb,var(--dsw-alias-label-primary) 15%,transparent);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;}' +
+  '.sk5-track{position:relative;height:23px;border-radius:9px!important;background:color-mix(in srgb,var(--dsw-alias-label-primary) 15%,transparent);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;}' +
   '.sk5-fill{position:absolute;top:0;bottom:0;left:0;border-radius:9px 0 0 9px!important;transition:width .16s ease,opacity .16s ease;pointer-events:none;}' +
   '.sk5-fillEnd{border-radius:9px!important;}' +
   '.sk5-dotHit{position:absolute;top:0;bottom:0;width:16px;transform:translateX(-50%);display:flex;align-items:flex-start;justify-content:center;cursor:pointer;z-index:2;}' +
@@ -225,16 +228,18 @@ const CSS =
   '.sk5-dotShape{transition:filter .14s ease;filter:none;}' +
   '.sk5-dotHit:hover .sk5-dotShape{filter:drop-shadow(0 0 2.5px currentColor);}' +
   '.sk5-dotMax{color:var(--dsw-static-deepseek-400);}' +
-  '.sk5-handle{position:absolute;top:0;bottom:0;width:20px;border-radius:9px!important;background:var(--dsw-static-neutral-bluish-00);transform:translateX(-50%);box-shadow:0 0 0 transparent;transition:left .16s ease,box-shadow .5s ease,background-color .5s ease;z-index:3;cursor:grab;}' +
+  '.sk5-handle{position:absolute;top:0;bottom:0;width:20px;border-radius:9px!important;background:var(--dsw-static-neutral-bluish-00);transform:translateX(-50%);box-shadow:0 0 0 transparent;transition:left .16s ease,transform .16s ease,box-shadow .5s ease,background-color .5s ease;z-index:3;cursor:grab;}' +
+    '.sk5-handleMax{background:color-mix(in srgb, var(--dsw-static-deepseek-450) 25%, var(--dsw-static-neutral-bluish-00));box-shadow:0 0 10px color-mix(in srgb, var(--dsw-static-deepseek-400) 90%, transparent);}' +
+  '.sk5-handleMoving{transform:translateX(-50%) scale(1.14);}' +
   '.sk5-handleMax{background:color-mix(in srgb, var(--dsw-static-deepseek-450) 25%, var(--dsw-static-neutral-bluish-00));box-shadow:0 0 10px color-mix(in srgb, var(--dsw-static-deepseek-400) 90%, transparent);}' +
   '/* Day mode only: a soft grey-black halo around the white knob, so that where it meets an equally white dropdown panel its own pixel edge is masked instead of showing. Night mode keeps the bare handle, and the top level keeps its blue glow. The host removes data-ds-dark-theme from <body> in the light appearance, so :not() is the day-mode test. */' +
   'body:not([data-ds-dark-theme]) .sk5-handle:not(.sk5-handleMax){box-shadow:0 0 3px rgb(0 0 0 / .28);}' +
   '.sk5-matrix{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;border-radius:9px!important;pointer-events:none;z-index:1;box-sizing:border-box;display:grid;gap:1px;justify-content:start;align-content:start;}' +
-  '.sk5-cell{width:100%;height:100%;opacity:0;animation:sk5-appear .15s ease forwards;}' +
-  '@keyframes sk5-appear{from{opacity:0}to{opacity:1}}' +
+  '.sk5-cell{width:100%;height:100%;opacity:0;animation:sk5-appear .6s ease forwards;}' +
+  '@keyframes sk5-appear{from{opacity:.1}to{opacity:1}}' +
   '.sk5-sq{width:100%;height:100%;border-radius:1px;animation:sk5-flash 1.45s infinite ease-in-out;}' +
   '/* One flash cycle: hold blue 250ms, jump to light, hold light 480ms, fade back over 720ms. */' +
-  '@keyframes sk5-flash{0%,17.24%{background-color:var(--dsw-static-deepseek-500)}17.25%,50.34%{background-color:var(--flash-light,var(--dsw-static-deepseek-400))}100%{background-color:var(--dsw-static-deepseek-500)}}'
+    '@keyframes sk5-flash{0%,29.41%{background:var(--dsw-static-deepseek-500)}29.42%,57.65%{background:var(--flash-light,var(--dsw-static-deepseek-400))}100%{background:var(--dsw-static-deepseek-500)}}' 
 
 /** Per-model (provider\u0000model) effort memory, shared across the whole page. */
 const effortMemory = new Map<string, string | undefined>()
@@ -291,6 +296,7 @@ export function apply(ctx: any): void {
       const [grid, setGrid] = React.useState<MatrixLayout | null>(null)
       const rootRef = React.useRef<any>(null)
       const trackRef = React.useRef<any>(null)
+      const [moving, setMoving] = React.useState(false)
       const dragIdxRef = React.useRef<any>(null)
       const busyRef = React.useRef(false)
       const pendingRef = React.useRef<any>(null)
@@ -412,8 +418,13 @@ export function apply(ctx: any): void {
 
       const matrixCells = React.useMemo(() => {
         if (!inMax || grid === null) return []
-        const deep = [65, 118, 230]
-        const lightMax = [103, 158, 254]
+        /** Blend a colour toward its own luminance: same hue, less saturation. */
+        const desat = (rgb: number[], f: number) => {
+        const l = 0.299 * rgb[0]! + 0.587 * rgb[1]! + 0.114 * rgb[2]!
+          return rgb.map((v) => Math.round(v + (l - v) * f))
+        }
+        const deep = desat([65, 118, 230], 0.15)
+        const lightMax = desat([103, 158, 254], 0.15)
         /**
          * How far the lightest cells reach past deepseek-400 (103,158,254)
          * toward deepseek-300 (183,200,254): a small lift reads lighter without
@@ -421,26 +432,57 @@ export function apply(ctx: any): void {
          */
         const lightLift = 0.3
         const lightPeak = lightMax.map((v, i) => Math.round(v + ([183, 200, 254][i]! - v) * lightLift))
-        const revealMs = 1000
-        const revealCycles = 3
-        const revealDepth = 0.6
-        const speedAt = (t: number, phase: number) => 1 + revealDepth * Math.sin(2 * Math.PI * revealCycles * t + phase)
-        const integrate = (u: number, phase: number) => {
-          const steps = 120
-          const du = u / steps
-          let s = 0
-          for (let i = 0; i < steps; i++) {
-            const t = (i + 0.5) * du
-            s += (1 / speedAt(t, phase)) * du
-          }
-          return s
+        /** Overall right-to-left sweep duration of the reveal. */
+        const revealMs = 1800
+        /**
+         * Fog-style advance. Each cell's progress is its horizontal position
+         * minus a smooth 2D noise field, so the frontier is ragged — some cells
+         * lead, some lag, leaving scattered gaps — while neighbouring cells still
+         * cross the threshold at nearby times, because the noise is continuous
+         * rather than per-cell jitter. Direction stays right to left; the row
+         * phases that advanced whole rows in alternation are gone.
+         *
+         * noiseAmp: how far the noise shifts a cell's progress as a fraction of
+         * the full sweep — the roughness of the frontier.
+         * noiseFreq: noise cells per matrix cell — larger means finer blobs.
+         */
+        const noiseLeadCols = 6
+        const noiseFreq = 0.45
+        /** Per-cell random stagger, ± this many ms: perforates the front edge. */
+        const staggerMs = 80
+        /** Integer-lattice hash folded into [0,1). */
+        const noiseHash = (x: number, y: number, seed: number) => {
+          let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 2246822519)) | 0
+          h = (h ^ (h >>> 13)) | 0
+          h = Math.imul(h, 1274126177)
+          return ((h ^ (h >>> 16)) >>> 0) / 4294967296
         }
-        const phases: number[] = []
-        const fulls: number[] = []
-        for (let r = 0; r < grid.r; r++) {
-          const ph = (r % 4) * (Math.PI / 2)
-          phases.push(ph)
-          fulls.push(integrate(1, ph))
+        /** Value noise: lattice hashes blended by a smoothstep, hence smooth. */
+        const valueNoise = (x: number, y: number, seed: number) => {
+          const x0 = Math.floor(x)
+          const y0 = Math.floor(y)
+          const fx = x - x0
+          const fy = y - y0
+          const sx = fx * fx * (3 - 2 * fx)
+          const sy = fy * fy * (3 - 2 * fy)
+          const n00 = noiseHash(x0, y0, seed)
+          const n10 = noiseHash(x0 + 1, y0, seed)
+          const n01 = noiseHash(x0, y0 + 1, seed)
+          const n11 = noiseHash(x0 + 1, y0 + 1, seed)
+          return (n00 * (1 - sx) + n10 * sx) * (1 - sy) + (n01 * (1 - sx) + n11 * sx) * sy
+        }
+        /**
+         * Two octaves in [-1,1]: a broad fog bank plus a finer grain, so the
+         * frontier reads as eroded by noise rather than as a straight edge.
+         */
+                /**
+         * Column-wise cluster centre: a smooth 1-D noise, so neighbouring columns
+         * share the cluster and the frontier reads as melting rather than
+         * flickering. Returns a fractional row index in [0, rows-1].
+         */
+        const clusterAt = (c: number) => {
+          const w = valueNoise(c * 0.35, 0.5, 71) * 0.65 + valueNoise(c * 0.9, 3.5, 89) * 0.35
+          return w * (grid.r - 1)
         }
         const out: any[] = []
         for (let r = 0; r < grid.r; r++) {
@@ -461,10 +503,32 @@ export function apply(ctx: any): void {
             const flashDuration = (FLASH_CYCLE_S * (1 - FLASH_JITTER + cellUnit(r, c, 3) * 2 * FLASH_JITTER)).toFixed(3) + 's'
             const fx = grid.c > 1 ? c / (grid.c - 1) : 0
             const u = grid.c > 1 ? (grid.c - 1 - c) / (grid.c - 1) : 0
-            const appearDelay = ((revealMs * (integrate(u, phases[r]!) / fulls[r]!)) / 1000).toFixed(3) + 's'
+                        // Progress minus the noise field decides when this cell appears: the
+            // smooth field keeps neighbours close in time, the offset makes the
+            // frontier ragged.
+                        // Lead is measured in COLUMNS: the scattered frontier is at most
+            // noiseLeadCols wide, and because every cell's delay is a fixed
+            // linear function of its column, the whole ragged edge translates
+            // leftward at exactly the sweep's own speed.
+                       // Rows are ordered by distance from this column's cluster centre, so
+            // the lit set is always a contiguous run that grows outward: one row
+            // at the front, a couple one column later, all rows three columns
+            // later. The stage is a fixed number of columns, so the whole profile
+            // still travels at exactly the sweep's speed.
+            const m = clusterAt(c)
+            const rank = Math.abs(r - m) / (grid.r - 1)
+            const stages = noiseLeadCols - 1
+            const stage = Math.min(stages, Math.round(rank * stages))
+            // Per-cell stagger on top of the cluster ramp: some blocks lag on
+            // purpose, which is what leaves the front perforated rather than
+            // evenly filled.
+            const stagger = (cellUnit(r, c, 4) * 2 - 1) * staggerMs
+            const nu = Math.max(0, Math.min(1, u + stage / (grid.c - 1) + stagger / revealMs))
+            const appearDelay = ((revealMs * nu) / 1000).toFixed(3) + 's'
             out.push({
               key: r + '-' + c,
               flashLight: 'rgb(' + lc[0] + ',' + lc[1] + ',' + lc[2] + ')',
+              flashDeep: 'rgb(' + deep.join(',') + ')',
               animationDelay: flashDelay,
               flashDuration: flashDuration,
               appearDelay: appearDelay,
@@ -547,6 +611,7 @@ export function apply(ctx: any): void {
         if (dragIdxRef.current === null) return
         const idx = dragIdxRef.current
         dragIdxRef.current = null
+        setMoving(false)
         stopDrag()
         const c = choices[idx]
         if (c !== undefined) {
@@ -556,6 +621,7 @@ export function apply(ctx: any): void {
       }
       const onWinCancel = () => {
         dragIdxRef.current = null
+        setMoving(false)
         stopDrag()
         setHoverIdx(null)
       }
@@ -665,7 +731,8 @@ export function apply(ctx: any): void {
                       matrixCells.map((sq: any) => React.createElement('div', { key: sq.key, className: 'sk5-cell', style: { animationDelay: sq.appearDelay } },
                         React.createElement('div', {
                           className: 'sk5-sq',
-                          style: { background: 'var(--dsw-static-deepseek-500)', opacity: sq.fade, animationDelay: sq.animationDelay, animationDuration: sq.flashDuration, borderRadius: grid.radius + 'px', '--flash-light': sq.flashLight },
+                          style: { background: 'var(--dsw-static-deepseek-500)', opacity: sq.fade, animationDelay: sq.animationDelay, animationDuration: sq.flashDuration, borderRadius: grid.radius + 'px', '--flash-light': sq.flashLight,
+            '--flash-deep': sq.flashDeep },
                         }),
                       )),
                     )
@@ -680,7 +747,14 @@ export function apply(ctx: any): void {
                       React.createElement('circle', { cx: 2, cy: 2, r: 2, fill: 'currentColor' }),
                     ))))
                   : null,
-                React.createElement('div', { className: 'sk5-handle' + (inMax ? ' sk5-handleMax' : ''), style: { left: handleLeft } }),
+                   React.createElement('div', {
+                   className: 'sk5-handle' + (inMax ? ' sk5-handleMax' : '') + (moving ? ' sk5-handleMoving' : ''),
+                   style: { left: handleLeft },
+  // Lift the knob on press — a tap or a long hold — and let the track's
+  // window-level release handlers drop it again. Pressing the bare track never
+  // reaches this handler, so a track click still does not lift it.
+                   onPointerDown: () => setMoving(true),
+                 }),
               ),
               shownError !== null
                 ? React.createElement('div', { className: 'sk5-err' }, shownError)
