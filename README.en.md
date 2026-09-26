@@ -45,16 +45,13 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
   </a>
 </p>
 
-**▶︎ [Watch the full demo video](https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4)** — model switching, the effort slider, and the top-level dot-matrix animation. Opens in a new tab and plays natively, **no GitHub sign-in required**.
-
-<details>
-<summary>Play inline on this page (requires a GitHub sign-in)</summary>
-
 <p align="center">
   <video src="https://github.com/user-attachments/assets/e2905bda-0e42-4f56-a3a0-7a545b958b03" controls muted loop playsinline width="100%"></video>
 </p>
 
-</details>
+> **The inline player needs a GitHub sign-in** and cannot play while signed out; in that case click the **poster above** or the **link below** to watch in a new tab.
+
+**▶︎ [Watch the full demo video](https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4)** — model switching, the effort slider, and the top-level dot-matrix animation.
 
 ## Compatibility
 
