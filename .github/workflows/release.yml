@@ -1,0 +1,65 @@
+name: release
+
+# GitHub Releases are independent of npm: `npm publish` records a gitHead in the
+# registry manifest and creates nothing here. This job bridges the two by keeping
+# exactly one release per published version.
+#
+# Trigger design:
+#   - push to main: a version bump lands, and the release for that version is the
+#     one that does not exist yet. This is what backfills a version published
+#     before this workflow existed.
+#   - push of a v* tag: create the release for that tag if it is missing, so a
+#     hand-made tag still produces a release.
+#   - workflow_dispatch: run it by hand from the Actions tab, same rules.
+#
+# The tag is placed on the commit that last changed package.json, which is the
+# release commit — not on whatever commit happened to trigger the run. That keeps
+# `v<version>` pointing at the tree npm recorded as gitHead.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the tag target is looked up in the log.
+          fetch-depth: 0
+
+      - name: Ensure one release per published version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tag="${GITHUB_REF_NAME}"
+            target="$(git rev-list -n 1 "$tag")"
+          else
+            tag="v$(node -p "require('./package.json').version")"
+            target="$(git log -1 --format=%H -- package.json)"
+          fi
+
+          echo "tag=${tag}  target=${target}"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "release ${tag} already exists — nothing to do"
+            exit 0
+          fi
+
+          gh release create "$tag" \
+            --title "${tag}" \
+            --target "${target}" \
+            --generate-notes
