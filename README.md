@@ -46,10 +46,10 @@
 ## 视频预览
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/5fadc536-b58c-42db-a270-9ca5d4b02cbb" controls muted loop playsinline width="100%"></video>
+  <video src="https://github.com/user-attachments/assets/e2905bda-0e42-4f56-a3a0-7a545b958b03" controls muted loop playsinline width="100%"></video>
 </p>
 
-**▶︎ [点击观看完整演示视频](https://github.com/user-attachments/assets/5fadc536-b58c-42db-a270-9ca5d4b02cbb)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。
+**▶︎ [点击观看完整演示视频](https://github.com/user-attachments/assets/e2905bda-0e42-4f56-a3a0-7a545b958b03)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。
 
 ## 兼容性
 
