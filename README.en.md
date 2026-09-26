@@ -40,16 +40,10 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 ## Video preview
 
 <p align="center">
-  <a href="https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4">
-    <img src="docs/dsh-ui-skin-switcher-demo-poster.png" alt="Demo video: the model and reasoning-effort switcher" width="100%">
-  </a>
-</p>
-
-<p align="center">
   <video src="https://github.com/user-attachments/assets/e2905bda-0e42-4f56-a3a0-7a545b958b03" controls muted loop playsinline width="100%"></video>
 </p>
 
-> **The inline player needs a GitHub sign-in** and cannot play while signed out; in that case click the **poster above** or the **link below** to watch in a new tab.
+> **The inline player needs a GitHub sign-in** and cannot play while signed out; in that case click the **link below** to watch in a new tab.
 
 **▶︎ [Watch the full demo video](https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4)** — model switching, the effort slider, and the top-level dot-matrix animation.
 
