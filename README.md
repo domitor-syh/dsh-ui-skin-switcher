@@ -46,10 +46,21 @@
 ## 视频预览
 
 <p align="center">
+  <a href="https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4">
+    <img src="docs/dsh-ui-skin-switcher-demo-poster.png" alt="演示视频：模型切换与思考强度切换器" width="100%">
+  </a>
+</p>
+
+**▶︎ [点击观看完整演示视频](https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。点开即在新标签页原生播放，**未登录 GitHub 也能看**。
+
+<details>
+<summary>在页面内直接播放（需已登录 GitHub）</summary>
+
+<p align="center">
   <video src="https://github.com/user-attachments/assets/e2905bda-0e42-4f56-a3a0-7a545b958b03" controls muted loop playsinline width="100%"></video>
 </p>
 
-**▶︎ [点击观看完整演示视频](https://github.com/user-attachments/assets/e2905bda-0e42-4f56-a3a0-7a545b958b03)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。
+</details>
 
 ## 兼容性
 
