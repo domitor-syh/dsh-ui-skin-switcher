@@ -6,8 +6,14 @@
 #   pnpm run build
 #   dsh --profile <any profile> --patch <this file> --no-open
 #
-# The browser half is served from lib/client.js in this directory, so the loop is
-# edit -> pnpm run build -> refresh the page.
+# `name` is the package id, not the path of the built file. Both spellings load
+# the node half, but `dsh-client-modules` finds the browser half by resolving the
+# row's specifier and walking up to the nearest package.json that declares the
+# package name, so this file must be named exactly as `package.json` does —
+# a path-shaped `name` is shadowed by the real directory at the same location and
+# resolves no manifest, which serves no `<id>/client.js` at all.
+#
+# The loop is edit -> pnpm run build -> refresh the page, exactly as before.
 - insert:
     - id: ui-skin-switcher
-      name: './lib/index.js'
+      name: '@domitor-syh/dsh-ui-skin-switcher'

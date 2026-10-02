@@ -11,9 +11,16 @@
 import * as React from 'react'
 
 /**
- * Required services: the connection RPC face (sessions models/selectModel), the
- * runtime sessions service (subagentAddress), the locale service (which
- * synthesizes the seat's `t`), and the slot registry.
+ * Required Browser Services, exported as the Client Loader's declaration site.
+ *
+ * The Client Loader creates this package's entry from the module table and the
+ * fiber's dependencies come from THIS export — `dsh.client.inject` in
+ * package.json only orders bundle arrival. Without the export the fiber injects
+ * nothing, every `ctx.<service>` below stays undefined, and the shell reports
+ * the package as "is waiting for activation".
+ *
+ * Same six names the first-party `@deepseek-ai/dsh-client-ui-model-selection`
+ * declares; `modelDirectories` is the Service that plugin provides.
  */
 export const inject = ['locale', 'modelDirectories', 'remote', 'remote.session', 'sessions', 'slots']
 
@@ -249,6 +256,14 @@ const CSS =
 /** Per-model (provider\u0000model) effort memory, shared across the whole page. */
 const effortMemory = new Map<string, string | undefined>()
 
+/**
+ * Snapshot handed to `useSyncExternalStore` when a session resolved no
+ * directory. Module-level on purpose: `useSyncExternalStore` compares snapshots
+ * by identity, so a literal rebuilt on every render would report a change on
+ * every render and re-render forever.
+ */
+const NO_DIRECTORY_STATE: any = { current: null, groups: [], status: 'idle', error: null }
+
 /** Two-level mask curve: right side opaque, left transparent, transition over 5%→75%. */
 function fadeAt(fx: number): number {
   if (fx <= 0.05) return 0
@@ -269,12 +284,26 @@ export function apply(ctx: any): void {
    * and the same session selection projection the official `/model` selector
    * renders, so this seat always shows what `/model` shows. DSH 0.1.5 replaced
    * the older `connection.api.sessions` RPC face with this service.
+   *
+   * `select` answers with an outcome envelope — `{ ok: true }` or
+   * `{ ok: false, error: { code, message } }` — and only rejects for a
+   * transport-level throw, so a refused selection has to be unwrapped rather
+   * than caught.
    */
   const directories = ctx.modelDirectories as {
     directoryFor: (sessionId: string) => {
       store: { subscribe: (listener: () => void) => () => void; getSnapshot: () => any }
       load: () => Promise<unknown>
-      select: (selection: { provider: string; model: string; reasoningEffort?: string }) => Promise<unknown>
+      select: (selection: { provider: string; model: string; reasoningEffort?: string }) =>
+        Promise<{ ok: true } | { ok: false; error: { code: string; message: string } }>
+    }
+  }
+  /** Unknown sessions make `directoryFor` throw; that must not break the seat. */
+  const directoryOf = (sessionId: string) => {
+    try {
+      return directories.directoryFor(sessionId)
+    } catch {
+      return null
     }
   }
   const runtimeSessions = ctx.sessions as {
@@ -308,10 +337,16 @@ export function apply(ctx: any): void {
       const [settledIdx, setSettledIdx] = React.useState<any>(null)
 
       /** This session's shared directory — the official selector's own data source. */
-      const directory = React.useMemo(() => directories.directoryFor(sessionId), [sessionId])
+      const directory = React.useMemo(() => directoryOf(sessionId), [sessionId])
       const state = React.useSyncExternalStore(
-        React.useCallback((listener: () => void) => directory.store.subscribe(listener), [directory]),
-        React.useCallback(() => directory.store.getSnapshot(), [directory]),
+        React.useCallback(
+          (listener: () => void) => (directory === null ? () => {} : directory.store.subscribe(listener)),
+          [directory],
+        ),
+        React.useCallback(
+          () => (directory === null ? NO_DIRECTORY_STATE : directory.store.getSnapshot()),
+          [directory],
+        ),
       )
 
       /** Composer trigger row owns this width; the slider handle spans half of it. */
@@ -319,7 +354,7 @@ export function apply(ctx: any): void {
 
       const load = () => {
         // The directory dedupes in-flight loads and surfaces failures on the store.
-        directory.load().catch(() => {})
+        if (directory !== null) directory.load().catch(() => {})
       }
       React.useEffect(() => { load() }, [])
       React.useEffect(() => { if (menu !== null) load() }, [menu])
@@ -362,18 +397,44 @@ export function apply(ctx: any): void {
       }, [state.current === null ? null : state.current.reasoningEffort])
 
       const apply = (sel: any, keepOpen: boolean) => {
+        if (directory === null) return
         pendingRef.current = sel
         if (busyRef.current) return
         busyRef.current = true
         setBusy(true); setError(null)
-        directory.select({
-          provider: sel.provider,
-          model: sel.model,
-          ...(sel.reasoningEffort === undefined ? {} : { reasoningEffort: sel.reasoningEffort }),
-        }).then(
-          () => {
+        /**
+         * The call itself can throw instead of answering — `select` refuses a
+         * session that may not use Agent-bound model RPCs before it goes async —
+         * and a refused selection RESOLVES with the Remote failure inside the
+         * envelope instead of rejecting. Both paths land on the seat's own error.
+         */
+        let pending: Promise<any>
+        try {
+          pending = directory.select({
+            provider: sel.provider,
+            model: sel.model,
+            ...(sel.reasoningEffort === undefined ? {} : { reasoningEffort: sel.reasoningEffort }),
+          })
+        } catch (e: unknown) {
+          busyRef.current = false
+          setBusy(false)
+          setError(msg(e))
+          pendingRef.current = null
+          return
+        }
+        pending.then(
+          (result: any) => {
             busyRef.current = false
             setBusy(false)
+            if (result !== undefined && result !== null && result.ok === false) {
+              const failure = result.error
+              setHoverIdx(null)
+              setError(failure === undefined || failure === null
+                ? 'selection failed'
+                : failure.code + ': ' + failure.message)
+              pendingRef.current = null
+              return
+            }
             if (!keepOpen) setMenu(null)
             effortMemory.set(sel.provider + '\u0000' + sel.model, sel.reasoningEffort)
             const next = pendingRef.current
@@ -551,6 +612,10 @@ export function apply(ctx: any): void {
 
       const isSubagent = runtimeSessions.subagentAddress(sessionId) !== undefined
       if (isSubagent) return null
+      // No directory means the session resolved no scope/binding: the seat has
+      // nothing to show and nothing to select, so it cedes the slot instead of
+      // rendering controls that would fail on first click.
+      if (directory === null) return null
 
       const insetPx = HANDLE_W / 2
       const posFrac = posPct / 100
