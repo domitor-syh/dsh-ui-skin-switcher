@@ -55,12 +55,15 @@ Supports **DSH 0.1.5 and newer** only.
 | --- | :---: | --- |
 | 0.1.5-alpha.1 … 0.1.5-rc.3 | ✅ | The whole 0.1.5 line; spot-checked at alpha.1, rc.2 (full end-to-end run) and rc.3 |
 | 0.1.6-alpha.1 / alpha.2 | ✅ | Same generation as 0.1.5 |
-| 0.1.7-alpha.1 / alpha.2 | ✅ | Newest published line; spot-checked at alpha.2 |
+| 0.1.7-alpha.1 / alpha.2 | ✅ | Same generation as 0.1.5; spot-checked at alpha.2 |
+| 0.2.0-rc.2 | ✅ | Current Desktop version; verified end-to-end (mount, browser half delivery, selection takes effect) |
 | 0.1.3-alpha.2 and earlier | ❌ | Older generation: only `connection.api`, no `remote.session` |
 
 The dividing line is **0.1.5**: that release replaced the old `connection.api` face with `ctx.remote.session` / `ctx.modelDirectories` and dropped the `dsh-client-ui-slots` dependency. This plugin is built on the new interfaces, so it cannot load on earlier DSH versions.
 
-> How this table was produced: each version's `dsh-client-ui-model-selection` package was unpacked and checked for the `modelDirectories` / `modelCatalog` / `selectModel` interfaces, plus a full end-to-end run on 0.1.5-rc.2.
+A second contract change landed in **0.2.0**: `select()` answers with a result envelope (`{ ok: false, error }`) instead of rejecting, and `directoryFor()` throws for a session with no scope or binding. This plugin has handled both shapes since 0.2.3; earlier versions failed silently on 0.2.0.
+
+> How this table was produced: each version's `dsh-client-ui-model-selection` package was unpacked and checked for the `modelDirectories` / `modelCatalog` / `selectModel` interfaces, plus full end-to-end runs on 0.1.5-rc.2 and 0.2.0-rc.2.
 
 ## Install
 

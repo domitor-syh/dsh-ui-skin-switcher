@@ -60,12 +60,15 @@
 | --- | :---: | --- |
 | 0.1.5-alpha.1 ～ 0.1.5-rc.3 | ✅ | 0.1.5 系列全系可用；已抽点校验 alpha.1、rc.2（端到端实测）、rc.3 |
 | 0.1.6-alpha.1 / alpha.2 | ✅ | 与 0.1.5 同代接口 |
-| 0.1.7-alpha.1 / alpha.2 | ✅ | 当前最新发布线；已抽点校验 alpha.2 |
+| 0.1.7-alpha.1 / alpha.2 | ✅ | 与 0.1.5 同代接口；已抽点校验 alpha.2 |
+| 0.2.0-rc.2 | ✅ | 桌面端当前版本；已完成端到端实测（挂载、浏览器半边投递、选择生效） |
 | 0.1.3-alpha.2 及更早 | ❌ | 旧一代接口，只有 `connection.api`，没有 `remote.session` |
 
 分界线是 **0.1.5**：从这一版起，DSH 用 `ctx.remote.session` / `ctx.modelDirectories` 取代了旧的 `connection.api` 接口，并移除了 `dsh-client-ui-slots` 依赖。本插件基于新接口实现，因此在更早的 DSH 上无法加载。
 
-> 上表依据：对相应版本的 `dsh-client-ui-model-selection` 包逐一解包，校验 `modelDirectories` / `modelCatalog` / `selectModel` 接口是否存在；并在 0.1.5-rc.2 上完成端到端实测。
+另一处契约差异在 **0.2.0**：`select()` 改为返回结果信封（`{ ok: false, error }`）而不是 reject，`directoryFor()` 对没有 scope/binding 的会话会抛异常。本插件自 0.2.3 起同时适配两种形态；更早的版本在 0.2.0 上选择失败会静默。
+
+> 上表依据：对相应版本的 `dsh-client-ui-model-selection` 包逐一解包，校验 `modelDirectories` / `modelCatalog` / `selectModel` 接口是否存在；并在 0.1.5-rc.2 与 0.2.0-rc.2 上完成端到端实测。
 本插件通过 DSH 0.1.5 引入的 `ctx.remote.session` / `ctx.modelDirectories` 接口读取模型目录与当前选择（与官方 `/model` 面板同源），在更早的 DSH 上无法加载。
 
 ## 快速上手
