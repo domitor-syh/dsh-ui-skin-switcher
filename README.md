@@ -15,23 +15,21 @@
   <a href="https://github.com/domitor-syh/dsh-ui-skin-switcher/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/domitor-syh/dsh-ui-skin-switcher/ci.yml?branch=main" alt="CI"></a>
 </p>
 
-一个为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）Web 端打造的、**Claude Desktop 同款风格的切换器**插件：把模型选择与思考强度（推理力度）切换做成输入框旁的一枚悬浮「座位」，下拉选模型、滑动调强度，一键到位。
-
-> **兼容性**：仅支持 **DSH 0.1.5 及以上版本**。
+为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）Web 端打造的 **Claude Desktop 同款风格切换器**：把模型选择与思考强度（推理力度）做成输入框旁的一枚悬浮「座位」，下拉选模型、滑动调强度。
 
 <div align="center">
 
-[是什么](#是什么) · [功能特性](#功能特性) · [视频预览](#视频预览) · [兼容性](#兼容性) · [快速上手](#快速上手) · [使用方法](#使用方法) · [为什么没有思考强度？](#为什么接入模型之后没有思考强度) · [常见问题](#常见问题) · [许可证](#许可证)
+[是什么](#是什么) · [功能特性](#功能特性) · [视频预览](#视频预览) · [安装](#安装) · [使用方法](#使用方法) · [为什么没有思考强度？](#为什么接入模型之后没有思考强度) · [常见问题](#常见问题) · [许可证](#许可证)
 
 </div>
 
 ## 是什么
 
-`dsh-ui-skin-switcher` 是 DeepSeek Harness 的 Web 端插件，注册 `conversation.input.model` 插件槽，在输入框旁渲染一枚模型 + 思考强度的切换器「座位」。
+`dsh-ui-skin-switcher` 注册 `conversation.input.model` 插件槽，在输入框旁渲染一枚模型 + 思考强度切换器「座位」。
 
-它与官方第一方模型选择器走**同一条通道**：通过 `ctx.modelDirectories` 读取按 provider 分组的模型目录与当前选择（与 `/model` 面板同源），再经同一条选择接口提交——在这里切换后的结果，就是 `/model` 面板里看到的结果，并立即作用于当前会话。
+它与官方模型选择器走**同一条通道**：经 `ctx.modelDirectories` 读取按 provider 分组的模型目录与当前选择（与 `/model` 面板同源），再从同一条接口提交——在这里切换的结果就是 `/model` 面板里的结果，并立即作用于当前会话。
 
-样式致敬 Claude Desktop 的切换器：滑动手感、圆角轨道、悬停高亮，都是熟悉的味道。
+样式致敬 Claude Desktop 的切换器：滑动手感、圆角轨道、悬停高亮。
 
 ## 功能特性
 
@@ -53,54 +51,23 @@
 
 **▶︎ [点击观看完整演示视频](https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。
 
-## 兼容性
+## 安装
 
-仅支持 **DSH 0.1.5 及以上版本**。
-| DSH 版本 | 可用 | 说明 |
-| --- | :---: | --- |
-| 0.1.5-alpha.1 ～ 0.1.5-rc.3 | ✅ | 0.1.5 系列全系可用；已抽点校验 alpha.1、rc.2（端到端实测）、rc.3 |
-| 0.1.6-alpha.1 / alpha.2 | ✅ | 与 0.1.5 同代接口 |
-| 0.1.7-alpha.1 / alpha.2 | ✅ | 与 0.1.5 同代接口；已抽点校验 alpha.2 |
-| 0.2.0-rc.2 | ✅ | 桌面端当前版本；已完成端到端实测（挂载、浏览器半边投递、选择生效） |
-| 0.1.3-alpha.2 及更早 | ❌ | 旧一代接口，只有 `connection.api`，没有 `remote.session` |
-
-分界线是 **0.1.5**：从这一版起，DSH 用 `ctx.remote.session` / `ctx.modelDirectories` 取代了旧的 `connection.api` 接口，并移除了 `dsh-client-ui-slots` 依赖。本插件基于新接口实现，因此在更早的 DSH 上无法加载。
-
-另一处契约差异在 **0.2.0**：`select()` 改为返回结果信封（`{ ok: false, error }`）而不是 reject，`directoryFor()` 对没有 scope/binding 的会话会抛异常。本插件自 0.2.3 起同时适配两种形态；更早的版本在 0.2.0 上选择失败会静默。
-
-> 上表依据：对相应版本的 `dsh-client-ui-model-selection` 包逐一解包，校验 `modelDirectories` / `modelCatalog` / `selectModel` 接口是否存在；并在 0.1.5-rc.2 与 0.2.0-rc.2 上完成端到端实测。
-本插件通过 DSH 0.1.5 引入的 `ctx.remote.session` / `ctx.modelDirectories` 接口读取模型目录与当前选择（与官方 `/model` 面板同源），在更早的 DSH 上无法加载。
-
-## 快速上手
-
-### 系统要求
-
-- DSH **0.1.5 及以上版本**。
-- 已安装 DeepSeek Harness，`dsh web` 可正常启动。
-- npm 安装无额外要求；从源码运行需要 Node.js >= 22 与 pnpm。
-
-### 安装（npm，推荐）
+**Web 端**（`dsh web`）：
 
 ```sh
 dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 ```
 
-然后重启 `dsh web`，输入框旁即出现切换器按钮。
-
-从源码运行 DSH？在仓库根目录，用「启动命令 + `dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher`」即可，例如：
+**桌面端**（官方渠道）——在插件的安装处填入包名 **`@domitor-syh/dsh-ui-skin-switcher`**，或使用等价命令：
 
 ```sh
-# 平时启动
-pnpm dsh web
-# 添加插件
-pnpm dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
+dsh plugin --profile desktop add @domitor-syh/dsh-ui-skin-switcher
 ```
 
-### 验证与卸载
+安装后：Web 端重启 `dsh web` 并刷新页面；桌面端重启桌面应用。从 DSH 源码运行时，在上述命令前加 `pnpm`。
 
-装好重启 `dsh web`，输入框旁出现切换器按钮即刻生效；也可以用 `dsh --profile web --dump-config` 确认插件配置层已挂载。
-
-卸载(如从源码启动，请用同安装的方式去卸载)：`dsh plugin --profile web remove @domitor-syh/dsh-ui-skin-switcher`，然后重启 `dsh web`。
+当前适配目标为 **DSH 0.2.0-rc.2**。声明的兼容范围为 `>=0.1.5-alpha.1`，其他构建需确认兼容性。
 
 ## 使用方法
 
