@@ -15,7 +15,7 @@
   <a href="https://github.com/domitor-syh/dsh-ui-skin-switcher/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/domitor-syh/dsh-ui-skin-switcher/ci.yml?branch=main" alt="CI"></a>
 </p>
 
-为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）Web 端打造的 **Claude Desktop 同款风格切换器**：把模型选择与思考强度（推理力度）做成输入框旁的一枚悬浮「座位」，下拉选模型、滑动调强度。
+为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）Web 端打造的 **Claude Desktop 同款风格切换器**：换模型、调思考强度，都不用离开输入框。
 
 <div align="center">
 
@@ -25,9 +25,9 @@
 
 ## 是什么
 
-`dsh-ui-skin-switcher` 注册 `conversation.input.model` 插件槽，在输入框旁渲染一枚模型 + 思考强度切换器「座位」。
+一枚悬在输入框旁的**模型与思考强度切换器**：点开下拉挑模型，拖动滑块调推理力度，选定即刻作用于当前会话。
 
-它与官方模型选择器走**同一条通道**：经 `ctx.modelDirectories` 读取按 provider 分组的模型目录与当前选择（与 `/model` 面板同源），再从同一条接口提交——在这里切换的结果就是 `/model` 面板里的结果，并立即作用于当前会话。
+模型按厂商分组排列，当前使用的那一个带勾选标记；强度档位跟随模型自己的能力，切走再切回，上次的选择还记得。
 
 样式致敬 Claude Desktop 的切换器：滑动手感、圆角轨道、悬停高亮。
 

@@ -15,13 +15,13 @@
   <a href="https://github.com/domitor-syh/dsh-ui-skin-switcher/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/domitor-syh/dsh-ui-skin-switcher/ci.yml?branch=main" alt="CI"></a>
 </p>
 
-A **Claude Desktop-style switcher** for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) Web GUI: model selection and reasoning effort as one floating "seat" next to the input box — dropdown for models, slider for effort.
+A **Claude Desktop-style switcher** for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) Web GUI: change the model or dial reasoning effort without ever leaving the composer.
 
 ## What it is
 
-`dsh-ui-skin-switcher` registers the `conversation.input.model` slot and renders a model + reasoning-effort switcher seat next to the composer input.
+A **model and reasoning-effort switcher** floating next to the input box: open the dropdown to pick a model, drag the slider to dial reasoning effort — your choice takes effect on the current session right away.
 
-It rides the exact same channel the first-party selector uses: it reads the provider-grouped model directory and the current selection through `ctx.modelDirectories` — the same source the `/model` panel renders — and submits through that same selection call, so a switch made here is what `/model` shows next and takes effect on the current session.
+Models are grouped by vendor with a checkmark on the active one, effort levels follow whatever the model itself supports, and each model remembers the level you last picked.
 
 The style pays homage to Claude Desktop's switcher — slider feel, rounded track, hover highlight.
 
