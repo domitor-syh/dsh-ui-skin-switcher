@@ -37,9 +37,11 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 
 ## Video preview
 
-<p align="center">
-  <video src="https://github.com/user-attachments/assets/3e60e874-4d08-44b3-be00-5e5ab213187c" controls muted loop playsinline width="100%"></video>
-</p>
+<div align="center">
+
+https://github.com/user-attachments/assets/3e60e874-4d08-44b3-be00-5e5ab213187c
+
+</div>
 
 > If the inline video does not play, click the **link below** to watch in a new tab; no GitHub sign-in is required.
 

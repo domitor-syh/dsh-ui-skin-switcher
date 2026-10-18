@@ -43,9 +43,11 @@
 
 ## 视频预览
 
-<p align="center">
-  <video src="https://github.com/user-attachments/assets/3e60e874-4d08-44b3-be00-5e5ab213187c" controls muted loop playsinline width="100%"></video>
-</p>
+<div align="center">
+
+https://github.com/user-attachments/assets/3e60e874-4d08-44b3-be00-5e5ab213187c
+
+</div>
 
 > 如页面内视频无法播放，请点击**下方链接**，在新标签页中直接观看，无需登录 GitHub。
 
