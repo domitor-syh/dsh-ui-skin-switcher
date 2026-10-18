@@ -38,10 +38,10 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 ## Video preview
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/e2905bda-0e42-4f56-a3a0-7a545b958b03" controls muted loop playsinline width="100%"></video>
+  <video src="https://github.com/user-attachments/assets/3e60e874-4d08-44b3-be00-5e5ab213187c" controls muted loop playsinline width="100%"></video>
 </p>
 
-> **The inline player needs a GitHub sign-in** and cannot play while signed out; in that case click the **link below** to watch in a new tab.
+> If the inline video does not play, click the **link below** to watch in a new tab; no GitHub sign-in is required.
 
 **▶︎ [Watch the full demo video](https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4)** — model switching, the effort slider, and the top-level dot-matrix animation.
 
@@ -53,13 +53,13 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 ```
 
-**Desktop** (official channel) — enter the package name **`@domitor-syh/dsh-ui-skin-switcher`** in the plugin installer. Newer Desktop profiles are managed by the app; install and update through that interface. The legacy command below does not apply to newer Desktop profiles:
+**Desktop** (official channel) — paste the following package name into the desktop app's plugin installer to install or update:
 
 ```sh
-# dsh plugin --profile desktop add @domitor-syh/dsh-ui-skin-switcher
+@domitor-syh/dsh-ui-skin-switcher
 ```
 
-After installing: on Web, restart `dsh web` and refresh the page; on Desktop, restart the app. When running DSH from source, prefix the commands above with `pnpm`.
+After installing: on Web, restart `dsh web` and refresh the page; on Desktop, restart the app. When running DSH from source, prefix the Web installation command with `pnpm`.
 
 The current adaptation target is **DSH 0.2.1-rc.2**, with a declared compatibility range of `>=0.1.5-alpha.1`. Core API contracts were checked against source for `0.1.5-alpha.1`, `0.2.0-rc.2`, and `0.2.1-rc.2`; other builds still need confirmation, and future versions have not all been runtime-tested.
 
@@ -70,7 +70,7 @@ The current adaptation target is **DSH 0.2.1-rc.2**, with a declared compatibili
 
 ### Why is there no reasoning-effort switcher after adding a model?
 
-The current model does not provide reasoning-effort information (`reasoningEfforts`). To keep model declarations accurate, we do not apply a uniform effort preset to every model — check the model vendor's official documentation; in DSH 0.2.1-rc.2, open **Settings → Models**, edit the relevant custom API model, and configure its reasoning levels, or patch the underlying config file. You can also give the vendor's deep-thinking documentation (or its link) to an LLM for help checking and configuring them.
+The current model either does not support reasoning effort (`reasoningEfforts`) or has not been configured for it. **DSH 0.2.1-rc.1 and later** let you configure each model's reasoning levels in **Settings → Models**; earlier versions require editing the configuration file. To ensure correct model responses, use the supported levels and values from the model vendor's configuration documentation. You can also give that documentation or its link to an LLM for help configuring them.
 
 > Taking effect: you edit `settings.yaml` under the DSH home (`~/.dsh`) — **not this plugin's files**; DSH watches that file and hot-reloads, so valid changes take effect **immediately with no restart**, update the model list and effort choices, and persist across restarts.
 

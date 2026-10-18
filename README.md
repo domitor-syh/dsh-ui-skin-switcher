@@ -44,10 +44,10 @@
 ## 视频预览
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/e2905bda-0e42-4f56-a3a0-7a545b958b03" controls muted loop playsinline width="100%"></video>
+  <video src="https://github.com/user-attachments/assets/3e60e874-4d08-44b3-be00-5e5ab213187c" controls muted loop playsinline width="100%"></video>
 </p>
 
-> **页面内播放器需要已登录 GitHub**，未登录时无法播放；此时请点击**下方链接**，在新标签页中直接观看。
+> 如页面内视频无法播放，请点击**下方链接**，在新标签页中直接观看，无需登录 GitHub。
 
 **▶︎ [点击观看完整演示视频](https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。
 
@@ -59,13 +59,13 @@
 dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 ```
 
-**桌面端**（官方渠道）——在插件的安装处填入包名 **`@domitor-syh/dsh-ui-skin-switcher`**。新版桌面配置由应用管理，请在桌面应用中安装和更新；以下旧版命令不适用于新版桌面配置：
+**桌面端**（官方渠道）——在桌面应用的插件安装处粘贴以下包名，即可安装或更新：
 
 ```sh
-# dsh plugin --profile desktop add @domitor-syh/dsh-ui-skin-switcher
+@domitor-syh/dsh-ui-skin-switcher
 ```
 
-安装后：Web 端重启 `dsh web` 并刷新页面；桌面端重启桌面应用。从 DSH 源码运行时，在上述命令前加 `pnpm`。
+安装后：Web 端重启 `dsh web` 并刷新页面；桌面端重启桌面应用。从 DSH 源码运行 Web 安装命令时，在命令前加 `pnpm`。
 
 当前适配目标为 **DSH 0.2.1-rc.2**，声明的兼容范围为 `>=0.1.5-alpha.1`。该范围基于 `0.1.5-alpha.1`、`0.2.0-rc.2` 与 `0.2.1-rc.2` 的核心接口源码核对；其他构建仍需确认兼容性，未来版本也未全部实测。
 
@@ -76,7 +76,7 @@ dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 
 ### 为什么接入模型之后没有思考强度？
 
-这是因为当前模型没有提供思考强度（`reasoningEfforts`）信息。为了确保声明的准确，我们没有为所有模型设定统一的思考强度档位——请自行前往该模型所属厂商的官方文档查阅；在 DSH 0.2.1-rc.2 中，可前往**设置 → 模型**，编辑相应的自定义 API 模型并配置推理等级，也可修改底层配置文件补上声明；或者直接把厂商的深度思考文档（或文档链接）发给大模型，让它协助核对和配置。
+这是因为当前模型不支持或尚未配置思考强度（`reasoningEfforts`）。**DSH 0.2.1-rc.1 及更高版本**可在**设置 → 模型**中配置各模型的推理等级；旧版本需自行修改配置文件。为确保模型响应正确，请参照对应厂商的模型配置文档填写支持的档位和值，也可将文档或链接交给大模型协助配置。
 
 > 生效方式：你修改的是 DSH 主目录（`~/.dsh`）下的 `settings.yaml`，**不是本插件的文件**；DSH 会监听该文件并**热加载，立即生效，无需重启**，有效配置会同步到模型列表和强度选项，下次启动依然有效。
 
@@ -87,7 +87,7 @@ dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 <details>
 <summary><strong>为什么我的模型没有出现思考强度滑块？</strong></summary>
 
-滑块只为提供了推理等级信息的模型显示。没有这些信息时，请先确认模型是否支持推理力度切换；自定义 API 模型可在 **设置 → 模型** 中依据厂商官方文档配置推理等级。未支持或未配置时，只显示模型切换按钮。
+滑块只为提供了推理等级信息的模型显示，未支持或未配置时只显示模型切换按钮。**DSH 0.2.1-rc.1 及更高版本**可在**设置 → 模型**中配置各模型的推理等级；旧版本需自行修改配置文件。为确保模型响应正确，请参照对应厂商的模型配置文档填写支持的档位和值。
 
 </details>
 
