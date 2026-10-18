@@ -7,7 +7,7 @@ import { defineConfig } from 'tsdown'
  * run it through the package's own `prepare` script.
  *
  * Outputs (matching the runtime contract dsh expects):
- * - lib/index.js, lib/invariant.js  ESM node halves (no runtime imports)
+ * - lib/index.js                   ESM node half (no runtime imports)
  * - lib/client.js                   browser half wrapped in the
  *                                   window.__ModuleLoader__.load({id, factory})
  *                                   registration shell, react stays external
@@ -17,7 +17,7 @@ const PKG_ID = '@domitor-syh/dsh-ui-skin-switcher'
 
 export default defineConfig([
   {
-    entry: ['src/index.ts', 'src/invariant.ts'],
+    entry: ['src/index.ts'],
     outDir: 'lib',
     format: 'esm',
     platform: 'neutral',

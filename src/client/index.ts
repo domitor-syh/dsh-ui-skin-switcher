@@ -314,9 +314,14 @@ export function apply(ctx: any): void {
   ctx.effect(() => ctx.locale.register(NS, DICTS), 'ui-skin-switcher: dictionaries')
 
   ctx.slots.inject('conversation.input.model', () => ctx.slots.register(
-    { name: 'conversation.input.model', priority: -1, locale: NS },
+    {
+      name: 'conversation.input.model', priority: -1, locale: NS,
+      children: {
+        'conversation.input.model.label': { kind: 'single', scope: 'session', inline: true },
+      },
+    },
     (props: any) => {
-      const { locked, sessionId, t } = props
+      const { locked, sessionId, t, renderSlot } = props
       /**
        * Read one dictionary key through the framework-injected `t` seat; the
        * Chinese table backs a host that shipped no locale service.
@@ -705,6 +710,14 @@ export function apply(ctx: any): void {
         window.addEventListener('blur', onWinCancel as any)
       }
 
+      /** Let DSH label contributors decorate names without changing selection IDs. */
+      const renderModelLabel = (group: any, model: any, placement: 'trigger' | 'option', selected: boolean) =>
+        React.createElement('span', { 'data-provider-id': group.id, 'data-model-id': model.id },
+          renderSlot('conversation.input.model.label', {
+            provider: { id: group.id, name: group.name }, model, placement, selected,
+          }, { fallback: model.name }),
+        )
+
       const triggerTitle = curGroup !== undefined && curModel !== undefined
         ? curGroup.name + ' / ' + curModel.name + (effectiveEffort !== undefined ? ' · ' + displayLabel : '')
         : tr('trigger.selectModel')
@@ -715,7 +728,11 @@ export function apply(ctx: any): void {
             type: 'button', className: 'sk5-trigger', disabled: locked || busy, title: triggerTitle,
             'aria-haspopup': 'menu', 'aria-expanded': menu === 'model',
             onClick: () => setMenu((m: any) => (m === 'model' ? null : 'model')),
-          }, React.createElement('span', { className: 'sk5-triggerName' }, modelLabel)),
+          }, React.createElement('span', { className: 'sk5-triggerName' },
+            curGroup !== undefined && curModel !== undefined
+              ? renderModelLabel(curGroup, curModel, 'trigger', true)
+              : modelLabel,
+          )),
           reasoning !== undefined && choices.length > 0
             ? React.createElement('button', {
                 type: 'button', className: 'sk5-trigger sk5-triggerEffort',
@@ -730,7 +747,7 @@ export function apply(ctx: any): void {
               React.createElement('div', { className: 'sk5-modelsTitle' }, tr('menu.models')),
               React.createElement('div', { className: 'sk5-list' },
                 !loaded && shownError === null ? React.createElement('div', { className: 'sk5-status' }, tr('status.loading')) : null,
-                !loaded && shownError !== null ? React.createElement('div', { className: 'sk5-err' }, shownError) : null,
+                shownError !== null ? React.createElement('div', { className: 'sk5-err' }, shownError) : null,
                 loaded && groups.length === 0 ? React.createElement('div', { className: 'sk5-status' }, tr('status.noModels')) : null,
                 loaded ? groups.map((g: any) => React.createElement('div', { key: g.id },
                   React.createElement('div', { className: 'sk5-group' }, g.name),
@@ -741,7 +758,7 @@ export function apply(ctx: any): void {
                       onClick: () => onPickModel(m, g),
                     },
                       React.createElement('span', { style: { minWidth: 0 } },
-                        React.createElement('div', null, m.name),
+                        React.createElement('div', null, renderModelLabel(g, m, 'option', active)),
                         m.description !== undefined ? React.createElement('div', { className: 'sk5-rowDesc' }, m.description) : null,
                       ),
                       active ? React.createElement('span', { className: 'sk5-check' }, '✓') : null,

@@ -30,6 +30,7 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 | Feature | Detail |
 | --- | --- |
 | Model switching | Clicking the model entry expands the model list ordered by vendor; the selection applies immediately and the matching reasoning effort updates together |
+| Model name extensions | Follows DSH model name extensions, such as the 1017 badge; shows the original model name when no extension is available |
 | Effort slider | Supports both click and drag, with multiple effort nodes; supported levels differ per model, and adjustments apply immediately |
 | Max-effort dot matrix | Reaching max effort reveals a right-to-left dot-matrix sweep on the track, with the handle glowing |
 | Per-model memory | Remembers the last effort per model, kept across switches |
@@ -53,28 +54,28 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 ```
 
-**Desktop** (official channel) — enter the package name **`@domitor-syh/dsh-ui-skin-switcher`** in the plugin installer, or use the equivalent command:
-
-```sh
-dsh plugin --profile desktop add @domitor-syh/dsh-ui-skin-switcher
-```
+**Desktop** (official channel) — enter the package name **`@domitor-syh/dsh-ui-skin-switcher`** in the desktop app's plugin installer. Desktop profiles are managed by the app; use that interface to install and update plugins.
 
 After installing: on Web, restart `dsh web` and refresh the page; on Desktop, restart the app. When running DSH from source, prefix the commands above with `pnpm`.
 
-The current adaptation target is **DSH 0.2.0-rc.2**. The declared compatibility range is `>=0.1.5-alpha.1`; other builds need their compatibility confirmed.
+The current adaptation target is **DSH 0.2.1-rc.2**, with a declared compatibility range of `>=0.2.1-rc.2`. Neither the target nor the declared range means that all future versions have been verified; other builds still need their compatibility confirmed.
 
 ## Usage
 
 1. **Pick a model** — click the button and pick from the list; the list is grouped by vendor and the current model shows a checkmark.
-2. **Dial effort** — for models declaring `reasoningEfforts`, an effort button appears to the right of the model; click it, then drag the slider or tap the track to switch levels.
+2. **Dial effort** — for models providing reasoning-level information, an effort button appears to the right of the model; click it, then drag the slider or tap the track to switch levels.
 
 ### Why is there no reasoning-effort switcher after adding a model?
 
-The current model does not declare a reasoning effort (`reasoningEfforts`) or vision capability. To keep model declarations accurate, we do not apply a uniform effort preset to every model — check the model vendor's official documentation and patch the underlying config file yourself, or hand the vendor's deep-thinking documentation (or its link) to the LLM and let it modify the config directly.
+The slider appears only when the model provides reasoning-level information. Without it, only the model switcher is shown.
 
-> Taking effect: you edit `settings.yaml` under the DSH home (`~/.dsh`) — **not this plugin's files**; DSH watches that file and hot-reloads, so the change takes effect **immediately with no restart** and persists across restarts.
+In DSH 0.2.1-rc.2, open **Settings → Models**, edit the relevant custom API model, and configure its reasoning levels. Use the model vendor's official documentation to enter the levels and corresponding values the model actually supports. You can also give the documentation or its link to an LLM for help checking and configuring them.
 
-Why do it yourself? To keep declarations accurate — **accuracy over coverage**. Reasoning effort is a per-vendor, per-level wire value; a wrong value silently breaks requests, so we never fill in a guessed preset.
+As an advanced option, edit `settings.yaml` under the DSH home (`~/.dsh`) directly to add the model's reasoning-level configuration (`reasoningEfforts`).
+
+> Taking effect: this is **DSH configuration, not this plugin's files**. DSH watches the file and **hot-reloads without a restart**; valid configuration updates the model list and effort choices and persists across restarts.
+
+Why follow the vendor's documentation? To keep declarations accurate — **accuracy over coverage**. Supported levels and their values vary by vendor and model. Incorrect values may cause requests to fail or the configuration to have no effect, so we do not fill in a uniform preset.
 
 ## License
 
