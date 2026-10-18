@@ -30,7 +30,7 @@ The style pays homage to Claude Desktop's switcher — slider feel, rounded trac
 | Feature | Detail |
 | --- | --- |
 | Model switching | Clicking the model entry expands the model list ordered by vendor; the selection applies immediately and the matching reasoning effort updates together |
-| Model name extensions | Follows DSH model name extensions, such as the 1017 badge; shows the original model name when no extension is available |
+| Model name | Displays the name supplied by the model catalog; extra labels added by the official selector, such as 1017, are not included. |
 | Effort slider | Supports both click and drag, with multiple effort nodes; supported levels differ per model, and adjustments apply immediately |
 | Max-effort dot matrix | Reaching max effort reveals a right-to-left dot-matrix sweep on the track, with the handle glowing |
 | Per-model memory | Remembers the last effort per model, kept across switches |
@@ -58,7 +58,7 @@ dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 
 After installing: on Web, restart `dsh web` and refresh the page; on Desktop, restart the app. When running DSH from source, prefix the commands above with `pnpm`.
 
-The current adaptation target is **DSH 0.2.1-rc.2**, with a declared compatibility range of `>=0.2.1-rc.2`. Neither the target nor the declared range means that all future versions have been verified; other builds still need their compatibility confirmed.
+The current adaptation target is **DSH 0.2.1-rc.2**, with a declared compatibility range of `>=0.1.5-alpha.1`. Core API contracts were checked against source for `0.1.5-alpha.1`, `0.2.0-rc.2`, and `0.2.1-rc.2`; other builds still need confirmation, and future versions have not all been runtime-tested.
 
 ## Usage
 
