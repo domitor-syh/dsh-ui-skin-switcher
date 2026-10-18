@@ -10,8 +10,33 @@ const bundle = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8'
 // Exercise the built Client with real React hooks and injected DSH service
 // fixtures. This does not claim browser/visual coverage; registration against
 // published DSH SlotCore versions is checked separately.
-async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true } } = {}) {
+async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true }, measureFonts = false } = {}) {
   const subscribers = new Set()
+  const measuredNodes = []
+  const samples = new Set()
+  let fontHeights = { trigger: '14px', value: '15px' }
+  const createNode = (kind) => {
+    const properties = new Map()
+    return {
+      kind,
+      style: {
+        getPropertyValue: key => properties.get(key) ?? '',
+        setProperty: (key, value) => properties.set(key, value),
+        removeProperty: key => properties.delete(key),
+      },
+      appendChild(sample) { sample.kind = kind; samples.add(sample) },
+    }
+  }
+  const fonts = new EventTarget()
+  fonts.ready = Promise.resolve()
+  const testDocument = new EventTarget()
+  if (measureFonts) {
+    testDocument.fonts = fonts
+    testDocument.createElement = () => {
+      const sample = { style: {}, remove() { samples.delete(sample) } }
+      return sample
+    }
+  }
   const selections = []
   const official = {
     id: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash',
@@ -39,7 +64,7 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
     select: async selection => {
       selections.push(JSON.parse(JSON.stringify(selection)))
       if (outcome instanceof Error) throw outcome
-      const response = outcome === 'legacy-void' ? undefined : outcome
+      const response = outcome === 'legacy-void' ? undefined : await outcome
       if (response === undefined || response.ok) publish({ ...snapshot, current: selection })
       return response
     },
@@ -47,6 +72,14 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
   let client
   const browser = new EventTarget()
   browser.devicePixelRatio = 1
+  if (measureFonts) browser.getComputedStyle = element => ({
+    fontSize: element.kind === 'trigger' ? '12.5px' : '13px',
+    fontFamily: 'system-ui', fontWeight: element.kind === 'trigger' ? '400' : '600',
+    fontStyle: 'normal', fontStretch: '100%', fontVariationSettings: 'normal',
+    fontFeatureSettings: 'normal', fontSizeAdjust: 'none', fontOpticalSizing: 'auto',
+    lineHeight: element.style.getPropertyValue?.('--sk5-effort-line-height') || 'normal',
+    height: fontHeights[element.kind],
+  })
   browser.__ModuleLoader__ = {
     load({ id, factory }) {
       assert.equal(id, '@domitor-syh/dsh-ui-skin-switcher')
@@ -57,7 +90,7 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
     },
   }
   vm.runInNewContext(bundle, {
-    window: browser, document: new EventTarget(), setTimeout, clearTimeout, console,
+    window: browser, document: testDocument, setTimeout, clearTimeout, console,
   }, { filename: 'lib/client.js' })
   let registration
   let Component
@@ -79,10 +112,22 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
   })
   let tree
   const render = () => React.createElement(Component, { locked: false, sessionId: 'session-test' })
-  await act(async () => { tree = TestRenderer.create(render()) })
-  t.after(() => { act(() => tree.unmount()); assert.equal(subscribers.size, 0) })
+  await act(async () => { tree = TestRenderer.create(render(), {
+    createNodeMock: element => {
+      if (!measureFonts) return null
+      const className = element.props.className ?? ''
+      const kind = className.includes('sk5-triggerEffort') ? 'trigger'
+        : className.includes('sk5-effortValue') ? 'value' : null
+      if (kind === null) return null
+      const node = createNode(kind)
+      measuredNodes.push(node)
+      return node
+    },
+  }) })
+  t.after(() => { act(() => tree.unmount()); assert.equal(subscribers.size, 0); assert.equal(samples.size, 0) })
   return {
-    tree, selections,
+    tree, selections, measuredNodes, samples,
+    async fontLoaded(next) { fontHeights = next; await act(async () => fonts.dispatchEvent(new Event('loadingdone'))) },
     official,
     snapshot: () => snapshot,
     async showModels() { await act(async () => tree.root.findByProps({ className: 'sk5-trigger' }).props.onClick()) },
@@ -162,6 +207,72 @@ test('host catalog updates refresh effort options without remounting the selecto
   })
   assert.match(text(ui.tree.toJSON()), /Deep/)
   assert.doesNotMatch(text(ui.tree.toJSON()), /Off/)
+})
+
+test('effort line boxes use separate native font metrics across default-label replacement', async t => {
+  // DOM font heights are fixtures: this verifies measurement/lifecycle plumbing,
+  // not actual browser geometry or pixel-identical rendering.
+  const ui = await mount(t, { measureFonts: true })
+  const heightOf = node => node.style.getPropertyValue('--sk5-effort-line-height')
+  assert.equal(heightOf(ui.measuredNodes[0]), '14px')
+  await act(async () => ui.tree.root.findByProps({ className: 'sk5-trigger sk5-triggerEffort' }).props.onClick())
+  assert.equal(heightOf(ui.measuredNodes.at(-1)), '15px')
+  const oldValue = ui.measuredNodes.at(-1)
+  const model = { ...ui.official, reasoning: { efforts: [{ id: 'max', name: 'Max' }] } }
+  await ui.update({
+    ...ui.snapshot(), current: { provider: 'deepseek-official', model: model.id, reasoningEffort: 'max' },
+    groups: [{ id: 'deepseek-official', name: 'DeepSeek', models: [model] }],
+  })
+  assert.equal(heightOf(oldValue), '', 'Discarded keyed labels release their override')
+  await ui.update({ ...ui.snapshot(), current: { provider: 'deepseek-official', model: model.id } })
+  assert.match(text(ui.tree.toJSON()), /默认/)
+  assert.equal(heightOf(ui.measuredNodes[0]), '14px')
+  assert.equal(heightOf(ui.measuredNodes.at(-1)), '15px')
+  await ui.fontLoaded({ trigger: '16.5px', value: '17px' })
+  assert.equal(heightOf(ui.measuredNodes[0]), '16.5px', 'Keep fractional native CSS pixel sizes')
+  assert.equal(heightOf(ui.measuredNodes.at(-1)), '17px')
+  assert.equal(heightOf(oldValue), '', 'Font completion must not mutate a stale label')
+  assert.equal(ui.samples.size, 0, 'Temporary font probes are removed')
+  await act(async () => ui.tree.unmount())
+  await ui.fontLoaded({ trigger: '20px', value: '21px' })
+  assert.ok(ui.measuredNodes.every(node => heightOf(node) === ''), 'Unmount removes overrides and font listeners')
+})
+
+test('an effort request only disables its trigger while the model menu stays available', async t => {
+  let complete
+  const pending = new Promise(resolve => { complete = resolve })
+  const ui = await mount(t, { outcome: pending })
+  const modelButton = () => ui.tree.root.findByProps({ className: 'sk5-trigger' })
+  const effortButton = () => ui.tree.root.findByProps({ className: 'sk5-trigger sk5-triggerEffort' })
+  await act(async () => effortButton().props.onClick())
+  await act(async () => ui.tree.root.findByProps({ className: 'sk5-track' }).props.onPointerDown({ clientX: 0 }))
+  await ui.releasePointer()
+  assert.equal(ui.selections.length, 1)
+  assert.equal(modelButton().props.disabled, false, 'Do not dim or disable the model trigger for effort changes')
+  assert.equal(effortButton().props.disabled, true)
+  await ui.showModels()
+  assert.equal(ui.tree.root.findAllByProps({ role: 'menuitem' }).length, 2)
+  assert.ok(ui.tree.root.findAllByProps({ role: 'menuitem' }).every(row => row.props.disabled), 'Prevent overlapping model/effort submissions')
+  await act(async () => complete({ ok: true }))
+  assert.equal(modelButton().props.disabled, false)
+  assert.equal(effortButton().props.disabled, false)
+  assert.ok(ui.tree.root.findAllByProps({ role: 'menuitem' }).every(row => !row.props.disabled))
+})
+
+test('a model request still disables both triggers and restores them after failure', async t => {
+  let complete
+  const pending = new Promise(resolve => { complete = resolve })
+  const ui = await mount(t, { outcome: pending })
+  await ui.showModels()
+  await act(async () => ui.tree.root.findAllByProps({ role: 'menuitem' })[0].props.onClick())
+  const buttons = () => [
+    ui.tree.root.findByProps({ className: 'sk5-trigger' }),
+    ui.tree.root.findByProps({ className: 'sk5-trigger sk5-triggerEffort' }),
+  ]
+  assert.ok(buttons().every(button => button.props.disabled))
+  await act(async () => complete({ ok: false, error: { code: 'busy', message: 'Try again' } }))
+  assert.ok(buttons().every(button => !button.props.disabled))
+  assert.match(text(ui.tree.toJSON()), /Try again/)
 })
 
 test('a Remote envelope failure remains visible for retry', async t => {

@@ -194,7 +194,7 @@ const CSS =
   '.sk5-trigger:hover{background:color-mix(in srgb,var(--dsw-alias-label-primary) 10%,transparent);}' +
   '.sk5-trigger:disabled{opacity:.55;cursor:not-allowed;}' +
   '.sk5-triggerName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
-  '.sk5-triggerEffort{color:var(--dsw-alias-brand-primary);}' +
+  '.sk5-triggerEffort{color:var(--dsw-alias-brand-primary);line-height:var(--sk5-effort-line-height,inherit);}' +
   '.sk5-drop{font-family:"Space Grotesk",var(--dsw-font-family,ui-sans-serif,system-ui,sans-serif);position:absolute;bottom:calc(100% + 6px);right:0;border-radius:14px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);box-shadow:0 10px 32px rgb(0 0 0 / .35);z-index:1200;color:var(--dsw-alias-label-primary);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}' +
   '.sk5-model{width:256px;}' +
   '.sk5-modelsTitle{font-size:14px;font-weight:700;color:var(--dsw-alias-label-secondary);padding:12px 14px 6px;text-align:left;}' +
@@ -222,7 +222,7 @@ const CSS =
   '.sk5-helpTip::before{content:"";position:absolute;top:-8px;left:0;right:0;height:8px;}' +
   '.sk5-helpTitle{font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-primary);margin-bottom:3px;text-align:left;}' +
   '.sk5-helpText{font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-secondary);text-align:left;}' +
-  '.sk5-effortValue{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);}' +
+  '.sk5-effortValue{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);line-height:var(--sk5-effort-line-height,inherit);}' +
   '.sk5-effortValueMax{color:var(--dsw-static-deepseek-400);}' +
   '@keyframes sk5-nameBlur{from{filter:blur(5px);opacity:.3}to{filter:blur(0);opacity:1}}' +
   '.sk5-labelsRow{display:flex;justify-content:space-between;margin-bottom:6px;}' +
@@ -252,6 +252,36 @@ const CSS =
   '.sk5-sq{width:100%;height:100%;border-radius:1px;animation:sk5-flash 1.45s infinite ease-in-out;}' +
   '/* One flash cycle: hold blue 250ms, jump to light, hold light 480ms, fade back over 720ms. */' +
     '@keyframes sk5-flash{0%,29.41%{background:var(--dsw-static-deepseek-500)}29.42%,57.65%{background:var(--flash-light,var(--dsw-static-deepseek-400))}100%{background:var(--dsw-static-deepseek-500)}}' 
+
+/**
+ * Keep the existing Latin-label line box on each platform. A fixed numeric
+ * line-height would also stop fallback-font jumps, but resize the working UI
+ * on platforms whose native font metrics differ. Measure our own font only;
+ * computed CSS height excludes ancestor transforms and display scaling.
+ */
+function measureEffortLineHeight(element: HTMLElement): string | null {
+  const previous = element.style.getPropertyValue('--sk5-effort-line-height')
+  element.style.removeProperty('--sk5-effort-line-height')
+  const font = window.getComputedStyle(element)
+  const inheritedLineHeight = font.lineHeight
+  // getComputedStyle is live: copy the font while our override is absent.
+  const fontProperties = ['fontSize', 'fontFamily', 'fontWeight', 'fontStyle', 'fontStretch', 'fontVariationSettings', 'fontFeatureSettings', 'fontSizeAdjust', 'fontOpticalSizing'] as const
+  const nativeFont = fontProperties.map(key => [key, font[key]] as const)
+  if (previous !== '') element.style.setProperty('--sk5-effort-line-height', previous)
+  if (Number.parseFloat(inheritedLineHeight) > 0) return inheritedLineHeight
+  const sample = document.createElement('span')
+  sample.textContent = 'Max'
+  sample.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;display:block;white-space:nowrap;line-height:normal;margin:0;padding:0;border:0;width:auto;height:auto;min-height:0;max-height:none;'
+  for (const [key, value] of nativeFont) sample.style[key] = value
+  sample.style.lineHeight = 'normal'
+  element.appendChild(sample)
+  try {
+    const height = window.getComputedStyle(sample).height
+    return Number.parseFloat(height) > 0 ? height : null
+  } finally {
+    sample.remove()
+  }
+}
 
 /** Per-model (provider\u0000model) effort memory, shared across the whole page. */
 const effortMemory = new Map<string, string | undefined>()
@@ -324,11 +354,14 @@ export function apply(ctx: any): void {
       const tr = (key: string): string => (typeof t === 'function' ? t(key) : (DICTS.zh[key] ?? key))
 
       const [menu, setMenu] = React.useState<any>(null)
-      const [busy, setBusy] = React.useState(false)
+      const [busyKind, setBusy] = React.useState<'model' | 'effort' | null>(null)
+      const busy = busyKind !== null
       const [error, setError] = React.useState<any>(null)
       const [hoverIdx, setHoverIdx] = React.useState<any>(null)
       const [grid, setGrid] = React.useState<MatrixLayout | null>(null)
       const rootRef = React.useRef<any>(null)
+      const effortTriggerRef = React.useRef<HTMLButtonElement | null>(null)
+      const effortValueRef = React.useRef<HTMLSpanElement | null>(null)
       const trackRef = React.useRef<any>(null)
       const [moving, setMoving] = React.useState(false)
       const dragIdxRef = React.useRef<any>(null)
@@ -401,7 +434,7 @@ export function apply(ctx: any): void {
         pendingRef.current = sel
         if (busyRef.current) return
         busyRef.current = true
-        setBusy(true); setError(null)
+        setBusy(keepOpen ? 'effort' : 'model'); setError(null)
         /**
          * The call itself can throw instead of answering — `select` refuses a
          * session that may not use Agent-bound model RPCs before it goes async —
@@ -417,7 +450,7 @@ export function apply(ctx: any): void {
           })
         } catch (e: unknown) {
           busyRef.current = false
-          setBusy(false)
+          setBusy(null)
           setError(msg(e))
           pendingRef.current = null
           return
@@ -425,7 +458,7 @@ export function apply(ctx: any): void {
         pending.then(
           (result: any) => {
             busyRef.current = false
-            setBusy(false)
+            setBusy(null)
             if (result !== undefined && result !== null && result.ok === false) {
               const failure = result.error
               setHoverIdx(null)
@@ -445,7 +478,7 @@ export function apply(ctx: any): void {
           },
           (e: unknown) => {
             busyRef.current = false
-            setBusy(false)
+            setBusy(null)
             setHoverIdx(null)
             setError(msg(e))
             pendingRef.current = null
@@ -478,6 +511,31 @@ export function apply(ctx: any): void {
       const safeDisplayIdx = choices.length > 0 ? Math.max(0, Math.min(choices.length - 1, displayIdx)) : 0
       const displayChoice = choices.length > 0 ? choices[safeDisplayIdx] : null
       const displayLabel = displayChoice !== null ? displayChoice.label : tr('effort.default')
+      const hasEffort = reasoning !== undefined && choices.length > 0
+      React.useLayoutEffect(() => {
+        let active = true
+        const elements = [effortTriggerRef.current, effortValueRef.current].filter(
+          (element): element is HTMLButtonElement | HTMLSpanElement => element !== null,
+        )
+        const stabilize = () => {
+          if (!active) return
+          // Finish measurements before writing the two final line heights.
+          const heights = elements.map(element => measureEffortLineHeight(element))
+          elements.forEach((element, index) => {
+            const height = heights[index]
+            if (height !== null) element.style.setProperty('--sk5-effort-line-height', height)
+          })
+        }
+        stabilize()
+        const fonts = document.fonts
+        void fonts?.ready.then(stabilize)
+        fonts?.addEventListener('loadingdone', stabilize)
+        return () => {
+          active = false
+          fonts?.removeEventListener('loadingdone', stabilize)
+          for (const element of elements) element.style.removeProperty('--sk5-effort-line-height')
+        }
+      }, [menu, hasEffort, displayLabel, current?.provider, current?.model])
       const inMax = choices.length > 1 && safeDisplayIdx === choices.length - 1
       const matrixVisible = inMax && atMaxPos
       const posPct = choices.length > 1 ? (posIdx / (choices.length - 1)) * 100 : 0
@@ -712,12 +770,13 @@ export function apply(ctx: any): void {
       return React.createElement('div', { ref: rootRef, className: 'sk5-root' },
         React.createElement('div', { className: 'sk5-triggers' },
           React.createElement('button', {
-            type: 'button', className: 'sk5-trigger', disabled: locked || busy, title: triggerTitle,
+            type: 'button', className: 'sk5-trigger', disabled: locked || busyKind === 'model', title: triggerTitle,
             'aria-haspopup': 'menu', 'aria-expanded': menu === 'model',
             onClick: () => setMenu((m: any) => (m === 'model' ? null : 'model')),
           }, React.createElement('span', { className: 'sk5-triggerName' }, modelLabel)),
           reasoning !== undefined && choices.length > 0
             ? React.createElement('button', {
+                ref: effortTriggerRef,
                 type: 'button', className: 'sk5-trigger sk5-triggerEffort',
                 disabled: locked || busy || current === null, title: tr('effort.title'),
                 'aria-haspopup': 'menu', 'aria-expanded': menu === 'effort',
@@ -756,6 +815,7 @@ export function apply(ctx: any): void {
               React.createElement('div', { className: 'sk5-titleRow' },
                 React.createElement('span', { className: 'sk5-effortLabel' }, 'Effort'),
                 React.createElement('span', {
+                  ref: effortValueRef,
                   key: displayLabel,
                   className: 'sk5-effortValue' + (choices.length > 1 && inMax ? ' sk5-effortValueMax' : ''),
                   style: { animation: 'sk5-nameBlur .28s ease' },
