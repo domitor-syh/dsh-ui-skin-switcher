@@ -63,7 +63,7 @@ dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 
 After installing: on Web, restart `dsh web` and refresh the page; on Desktop, restart the app. When running DSH from source, prefix the Web installation command with `pnpm`.
 
-The current adaptation target is **DSH 0.2.1-rc.2**, with a declared compatibility range of `>=0.1.5-alpha.1`. Core API contracts were checked against source for `0.1.5-alpha.1`, `0.2.0-rc.2`, and `0.2.1-rc.2`; other builds still need confirmation, and future versions have not all been runtime-tested.
+The current adaptation target is **DSH 0.2.1-rc.3**, with a declared compatibility range of `>=0.1.5-alpha.1`. Core API contracts were checked against source for `0.1.5-alpha.1`, `0.2.0-rc.2`, `0.2.1-rc.2`, and `0.2.1-rc.3`; other builds still need confirmation, and future versions have not all been runtime-tested.
 
 ## Usage
 
