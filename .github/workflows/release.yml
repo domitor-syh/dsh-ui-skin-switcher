@@ -54,12 +54,34 @@ jobs:
 
           echo "tag=${tag}  target=${target}"
 
+          # The changelog is the curated per-version record. `--generate-notes`
+          # only describes merged pull requests, so a version committed straight
+          # to main produced a release with nothing but the compare link.
+          notes="$(node .github/scripts/release-notes.mjs "${tag}")" || notes=""
+          if [ -n "${notes}" ]; then
+            printf '%s\n' "${notes}" > notes.md
+            echo "release notes taken from CHANGELOG.md"
+          else
+            echo "no CHANGELOG.md section; falling back to generated notes"
+          fi
+
+          notes_args=(--generate-notes)
+          if [ -s notes.md ]; then
+            notes_args=(--notes-file notes.md)
+          fi
+
           if gh release view "$tag" >/dev/null 2>&1; then
-            echo "release ${tag} already exists — nothing to do"
+            # Body-only refresh: keeps the existing tag target and assets.
+            if [ -s notes.md ]; then
+              gh release edit "$tag" "${notes_args[@]}"
+              echo "release ${tag} already existed — notes updated"
+            else
+              echo "release ${tag} already exists — nothing to do"
+            fi
             exit 0
           fi
 
           gh release create "$tag" \
             --title "${tag}" \
             --target "${target}" \
-            --generate-notes
+            "${notes_args[@]}"
