@@ -5,9 +5,9 @@ import vm from 'node:vm'
 import { gunzipSync } from 'node:zlib'
 import * as React from 'react'
 
-// Every released DSH line the declared range covers. `0.2.1-rc.3` is the
+// Every released DSH line the declared range covers. `0.2.1-rc.5` is the
 // current adaptation target; the older rows keep the floor honest.
-const versions = ['0.1.5-alpha.1', '0.2.0-rc.2', '0.2.1-rc.2', '0.2.1-rc.3']
+const versions = ['0.1.5-alpha.1', '0.2.0-rc.2', '0.2.1-rc.2', '0.2.1-rc.3', '0.2.1-rc.5']
 // DSH's official model selector started declaring the label child in 0.2.1.
 const ownsLabel = version => version.startsWith('0.2.1-')
 const clientCode = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
