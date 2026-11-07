@@ -2,6 +2,7 @@
   "name": "@domitor-syh/dsh-ui-skin-switcher",
   "description": "Model and reasoning-effort switcher: composer seat with an Off/Max effort slider over session.models / session.selectModel",
   "version": "0.2.6",
+  "icon": "icon.png",
   "publishConfig": {
     "access": "public"
   },
@@ -51,6 +52,7 @@
     "lib/index.js",
     "lib/client.js",
     "cordis.patch.yml",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "icon.png"
   ]
 }
