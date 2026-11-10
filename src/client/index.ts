@@ -9,6 +9,9 @@
  * remembering each model's last effort.
  */
 import * as React from 'react'
+import { ColorSection } from './color-section.js'
+import { parseHex } from './palette.js'
+import { DEFAULT_PALETTE, readFollowSeat, readPaletteConfig, setPalette, usePaletteColors } from './palette-store.js'
 
 /**
  * Required Browser Services, exported as the Client Loader's declaration site.
@@ -39,6 +42,37 @@ const DICTS: Record<'zh' | 'en', Record<string, string>> = {
     'status.noModels': '暂无可用模型',
     'help.aria': '思考强度说明',
     'help.text': '调节模型推理深度，低强度回复快、内容简洁；高强度思考更全面，适合复杂问题，响应会稍慢。',
+    'color.title': '颜色切换器',
+    'color.subtitle': '逐项配置界面元素配色；调整即时预览，点击应用后写入插件配置。',
+    'color.mode': '配色方式',
+    'color.mode.auto': '按主色自动配色',
+    'color.mode.auto.desc': '由主色统一派生六项颜色',
+    'color.mode.custom': '逐项自定义配色',
+    'color.mode.custom.desc': '六项颜色分别独立调整',
+    'color.items': '逐项配色',
+    'color.items.hint': '点击行选择目标',
+    'color.palette': '调色盘',
+    'color.palette.hint': '点击色块即预览',
+    'color.master': '主色',
+    'color.target': '当前应用到：',
+    'color.auto': '自动',
+    'color.code': '色码（支持 #RGB、#RRGGBB、#RRGGBBAA）',
+    'color.apply': '应用',
+    'color.reset': '重置颜色',
+    'color.followSeat': '最高思考强度文字跟随档位值颜色',
+    'color.saving': '保存中…',
+    'color.saved': '已保存',
+    'color.previewHint': '调整即时预览，应用后写入插件配置',
+    'color.invalid': '格式无效，请使用 #RGB、#RRGGBB 或 #RRGGBBAA',
+    'color.saveFailed': '保存失败，请重试',
+    'color.hue': '色相',
+    'color.sv': '饱和度与明度',
+    'color.slot.dialogFont': '弹层档位值',
+    'color.slot.maxDot': '档位圆点',
+    'color.slot.slider': '滑块把手',
+    'color.slot.sliderGlow': '滑块外发光',
+    'color.slot.gridNormal': '点阵底色',
+    'color.slot.gridBlink': '点阵闪烁',
   },
   en: {
     'trigger.fallbackModel': 'Model',
@@ -50,6 +84,37 @@ const DICTS: Record<'zh' | 'en', Record<string, string>> = {
     'status.noModels': 'No models available',
     'help.aria': 'About reasoning effort',
     'help.text': 'Adjusts how deeply the model reasons: lower effort answers faster and more concisely, while higher effort thinks more thoroughly for complex problems and responds a little slower.',
+    'color.title': 'Colours',
+    'color.subtitle': 'Tune each accent of the composer UI; edits preview immediately and are saved when you apply.',
+    'color.mode': 'Palette mode',
+    'color.mode.auto': 'Derive from one main colour',
+    'color.mode.auto.desc': 'One main colour produces all six slots',
+    'color.mode.custom': 'Customise each slot',
+    'color.mode.custom.desc': 'Adjust the six colours independently',
+    'color.items': 'Slots',
+    'color.items.hint': 'Click a row to edit it',
+    'color.palette': 'Palette',
+    'color.palette.hint': 'Click a swatch to preview',
+    'color.master': 'Main colour',
+    'color.target': 'Editing:',
+    'color.auto': 'auto',
+    'color.code': 'Colour code (#RGB, #RRGGBB or #RRGGBBAA)',
+    'color.apply': 'Apply',
+    'color.reset': 'Reset colours',
+    'color.followSeat': 'Top-effort text follows the effort-value colour',
+    'color.saving': 'Saving…',
+    'color.saved': 'Saved',
+    'color.previewHint': 'Edits preview live and are written to the plugin configuration when applied',
+    'color.invalid': 'Invalid format: use #RGB, #RRGGBB or #RRGGBBAA',
+    'color.saveFailed': 'Could not save, please retry',
+    'color.hue': 'Hue',
+    'color.sv': 'Saturation and brightness',
+    'color.slot.dialogFont': 'Effort value',
+    'color.slot.maxDot': 'Effort dot',
+    'color.slot.slider': 'Slider handle',
+    'color.slot.sliderGlow': 'Slider glow',
+    'color.slot.gridNormal': 'Dot matrix',
+    'color.slot.gridBlink': 'Matrix flash',
   },
 }
 
@@ -223,7 +288,11 @@ const CSS =
   '.sk5-helpTitle{font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-primary);margin-bottom:3px;text-align:left;}' +
   '.sk5-helpText{font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-secondary);text-align:left;}' +
   '.sk5-effortValue{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);line-height:var(--sk5-effort-line-height,inherit);}' +
-  '.sk5-effortValueMax{color:var(--dsw-static-deepseek-400);}' +
+  '.sk5-effortValueMax{color:var(--sk5-c-dialog,var(--dsw-static-deepseek-400));}' +
+  /* Opt-in: the top-effort label on the composer seat takes the popover value
+     colour too. The switch lives in the colour section and toggles the
+     attribute on <html>, so the seat needs no extra state. */
+  'html[data-sk5-follow-seat] .sk5-effortSeatMax{color:var(--sk5-c-dialog,var(--dsw-static-deepseek-400));}' +
   '@keyframes sk5-nameBlur{from{filter:blur(5px);opacity:.3}to{filter:blur(0);opacity:1}}' +
   '.sk5-labelsRow{display:flex;justify-content:space-between;margin-bottom:6px;}' +
   '.sk5-endLabel{font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-tertiary,var(--dsw-alias-label-secondary));}' +
@@ -239,19 +308,119 @@ const CSS =
   '.sk5-dotHit:hover .sk5-dot{opacity:1;}' +
   '.sk5-dotShape{transition:filter .14s ease;filter:none;}' +
   '.sk5-dotHit:hover .sk5-dotShape{filter:drop-shadow(0 0 2.5px currentColor);}' +
-  '.sk5-dotMax{color:var(--dsw-static-deepseek-400);}' +
+  '.sk5-dotMax{color:var(--sk5-c-dot,var(--dsw-static-deepseek-400));}' +
   '.sk5-handle{position:absolute;top:0;bottom:0;width:20px;border-radius:9px!important;background:var(--dsw-static-neutral-bluish-00);transform:translateX(-50%);box-shadow:0 0 0 transparent;transition:left .16s ease,transform .16s ease,box-shadow .5s ease,background-color .5s ease;z-index:3;cursor:grab;}' +
-    '.sk5-handleMax{background:color-mix(in srgb, var(--dsw-static-deepseek-450) 25%, var(--dsw-static-neutral-bluish-00));box-shadow:0 0 10px color-mix(in srgb, var(--dsw-static-deepseek-400) 90%, transparent);}' +
+    '.sk5-handleMax{background:var(--sk5-c-slider,color-mix(in srgb, var(--dsw-static-deepseek-450) 25%, var(--dsw-static-neutral-bluish-00)));box-shadow:0 0 10px color-mix(in srgb, var(--sk5-c-glow, var(--dsw-static-deepseek-400)) 90%, transparent);}' +
   '.sk5-handleMoving{transform:translateX(-50%) scale(1.14);}' +
-  '.sk5-handleMax{background:color-mix(in srgb, var(--dsw-static-deepseek-450) 25%, var(--dsw-static-neutral-bluish-00));box-shadow:0 0 10px color-mix(in srgb, var(--dsw-static-deepseek-400) 90%, transparent);}' +
-  '/* Day mode only: a soft grey-black halo around the white knob, so that where it meets an equally white dropdown panel its own pixel edge is masked instead of showing. Night mode keeps the bare handle, and the top level keeps its blue glow. The host removes data-ds-dark-theme from <body> in the light appearance, so :not() is the day-mode test. */' +
-  'body:not([data-ds-dark-theme]) .sk5-handle:not(.sk5-handleMax){box-shadow:0 0 3px rgb(0 0 0 / .28);}' +
+  /* The handle paints identically in both appearances: no day-mode halo. The
+     extra light-mode shadow read as a raised knob, so the dark form is the
+     single reference. */
   '.sk5-matrix{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;border-radius:9px!important;pointer-events:none;z-index:1;box-sizing:border-box;display:grid;gap:1px;justify-content:start;align-content:start;}' +
   '.sk5-cell{width:100%;height:100%;opacity:0;animation:sk5-appear .6s ease forwards;}' +
   '@keyframes sk5-appear{from{opacity:.1}to{opacity:1}}' +
   '.sk5-sq{width:100%;height:100%;border-radius:1px;animation:sk5-flash 1.45s infinite ease-in-out;}' +
   '/* One flash cycle: hold blue 250ms, jump to light, hold light 480ms, fade back over 720ms. */' +
-    '@keyframes sk5-flash{0%,29.41%{background:var(--dsw-static-deepseek-500)}29.42%,57.65%{background:var(--flash-light,var(--dsw-static-deepseek-400))}100%{background:var(--dsw-static-deepseek-500)}}' 
+    '@keyframes sk5-flash{0%,29.41%{background:var(--sk5-c-grid,var(--dsw-static-deepseek-500))}29.42%,57.65%{background:var(--flash-light,var(--sk5-c-blink,var(--dsw-static-deepseek-400)))}100%{background:var(--sk5-c-grid,var(--dsw-static-deepseek-500))}}' +
+  `/* ===================== Colour switcher (bundle detail page) ===================== */
+/* The section lives in the plugin manager's settings page, so it borrows the host's theme
+   tokens instead of shipping a dark-only palette: the same markup then reads correctly in
+   both appearances. */
+.sk5c{--sk5c-fg:var(--dsw-alias-label-primary);--sk5c-muted:var(--dsw-alias-label-secondary);--sk5c-tertiary:var(--dsw-alias-label-tertiary,var(--dsw-alias-label-secondary));--sk5c-card:var(--dsw-alias-bg-layer-1);--sk5c-inset:var(--dsw-alias-bg-layer-2);--sk5c-border:var(--dsw-alias-border-l2);--sk5c-input:var(--dsw-alias-border-l1);--sk5c-primary:var(--dsw-alias-brand-primary);color:var(--sk5c-fg);font-size:13px;line-height:1.5}
+.sk5c *{box-sizing:border-box}
+.sk5c-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+.sk5c-badge-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border:1px solid var(--sk5c-border);border-radius:8px;color:var(--sk5c-primary)}
+.sk5c-title{margin:0;font-size:14px;font-weight:600}
+.sk5c-subtitle{margin:2px 0 0;font-size:12px;color:var(--sk5c-muted)}
+.sk5c-panel{display:grid;grid-template-columns:minmax(0,1fr);border:1px solid var(--sk5c-border);border-radius:14px;background:var(--sk5c-card);overflow:hidden}
+.sk5c-col{display:flex;flex-direction:column;min-width:0}
+.sk5c-section{padding:16px;min-width:0}
+.sk5c-col .sk5c-section + .sk5c-section{border-top:1px solid var(--sk5c-border)}
+.sk5c-head{display:flex;align-items:center;gap:6px;margin-bottom:10px;color:var(--sk5c-muted)}
+.sk5c-head h4{margin:0;font-size:13px;font-weight:600;color:var(--sk5c-fg)}
+.sk5c-hint{margin-left:auto;font-size:11.5px;color:var(--sk5c-tertiary)}
+.sk5c-modes{display:grid;gap:8px}
+.sk5c-mode{position:relative;display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border:1px solid transparent;border-radius:9px;background:var(--sk5c-inset);cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease}
+.sk5c-mode.is-on{border-color:var(--sk5c-primary);box-shadow:0 0 0 1px var(--sk5c-primary)}
+.sk5c-mode input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+/* Drawn as SVG circles so the host's radius reset cannot square them off. */
+.sk5c-dot{display:block;flex:none;margin-top:2px}
+.sk5c-mode-title{display:block;font-size:12.5px;font-weight:500}
+.sk5c-mode-desc{display:block;margin-top:1px;font-size:11.5px;color:var(--sk5c-muted)}
+.sk5c-list{list-style:none;margin:0 -8px;padding:0}
+.sk5c-list li + li{border-top:1px solid var(--sk5c-border)}
+.sk5c-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:9px 8px;border:1px solid transparent;border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer;transition:background-color .16s ease,border-color .16s ease}
+.sk5c-row:hover:not(:disabled){background:var(--sk5c-inset)}
+.sk5c-row:disabled{cursor:default}
+.sk5c-row.is-selected{border-color:var(--sk5c-primary);background:var(--sk5c-inset)}
+.sk5c-row:focus-visible{outline:2px solid var(--sk5c-primary);outline-offset:2px}
+.sk5c-row-text{min-width:0}
+.sk5c-row-name{display:flex;align-items:center;gap:6px;font-size:12.5px}
+.sk5c-auto{display:none;padding:0 6px;border:1px solid var(--sk5c-border);border-radius:6px;font-size:10.5px;line-height:1.6;color:var(--sk5c-muted)}
+.sk5c-row.is-auto .sk5c-auto{display:inline-block}
+.sk5c-hex{display:block;margin-top:2px;font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:11.5px;letter-spacing:.03em;color:var(--sk5c-muted)}
+.sk5c-chip{flex:none;width:26px;height:26px;border-radius:7px;border:1px solid var(--sk5c-border)}
+.sk5c-master{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 10px;margin-bottom:12px;border:1px solid var(--sk5c-primary);border-radius:9px;background:var(--sk5c-inset)}
+.sk5c-target{margin:0 0 12px;font-size:12px;color:var(--sk5c-muted)}
+.sk5c-target strong{font-weight:500;color:var(--sk5c-fg)}
+/* The palette follows the host appearance like the rest of the panel: the
+   design's shapes and spacing are kept, but every surface colour comes from the
+   theme tokens so light and dark both read correctly. */
+.sk5c-panel > .sk5c-palette{border-top:1px solid var(--sk5c-border)}
+.sk5c-presets{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin-bottom:12px}
+.sk5c-preset{min-height:26px;aspect-ratio:1/1;padding:0;border:1px solid var(--sk5c-border);border-radius:7px;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.sk5c-preset:hover{transform:translateY(-2px)}
+.sk5c-preset.is-active{border-color:var(--sk5c-primary);box-shadow:0 0 0 1px var(--sk5c-primary)}
+.sk5c-preset:focus-visible{outline:2px solid var(--sk5c-primary);outline-offset:2px}
+/* Picker geometry and states are ported verbatim from the supplied design:
+   the hue bar is a 16px bar with an 8px radius and a 1px border (not a pill),
+   and the thumbs are solid circles filled with the colour being edited, not
+   hollow rings. Focus/active states keep the thin border and draw no ring. */
+.sk5c-picker{margin-top:16px;padding-top:16px;border-top:1px solid var(--sk5c-border)}
+.sk5c-hue{position:relative;width:100%;height:16px;border:1px solid var(--sk5c-border);border-radius:999px;background:linear-gradient(90deg,#ff0000 0%,#ffff00 16.66%,#00ff00 33.33%,#00ffff 50%,#0000ff 66.66%,#ff00ff 83.33%,#ff0000 100%);background-origin:border-box;background-clip:border-box;cursor:pointer;touch-action:none;transition:border-color .16s ease}
+.sk5c-hue:hover{border-color:var(--sk5c-input)}
+.sk5c-hue:focus-visible,.sk5c-sv:focus-visible,.sk5c-hue:active,.sk5c-sv:active{outline:none;border-color:var(--sk5c-border)}
+.sk5c-hue-thumb{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);pointer-events:none;overflow:visible}
+.sk5c-sv{position:relative;width:100%;aspect-ratio:1/1;border:1px solid var(--sk5c-border);border-radius:8px;background-color:hsl(0,100%,50%);background-image:linear-gradient(to top,#000000,rgb(0 0 0 / 0)),linear-gradient(to right,#ffffff,rgb(255 255 255 / 0));background-origin:border-box;background-clip:border-box;cursor:crosshair;touch-action:none;transition:border-color .16s ease}
+.sk5c-sv:hover{border-color:var(--sk5c-input)}
+.sk5c-sv-thumb{position:absolute;top:0;left:100%;transform:translate(-50%,-50%);pointer-events:none;overflow:visible}
+.sk5c-picker-block + .sk5c-picker-block{margin-top:14px}
+.sk5c-label{display:block;margin-bottom:5px;font-size:12.5px;color:var(--sk5c-muted)}
+.sk5c-code{margin-top:14px}
+.sk5c-code-row{display:flex;gap:8px}
+.sk5c-input{flex:1;min-width:0;height:32px;padding:0 9px;border:1px solid var(--sk5c-input);border-radius:8px;background:var(--sk5c-inset);color:var(--sk5c-fg);font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:12px;letter-spacing:.04em}
+.sk5c-input:focus{outline:none;border-color:var(--sk5c-primary)}
+.sk5c-input.is-error{border-color:var(--dsw-alias-state-error-primary)}
+/* Primary-button pair from the host: the brand accent itself is the inverted
+   colour (near-black in light, near-white in dark), so pairing it with a fixed
+   #fff label made the button disappear in dark mode. Fill and label come from
+   the host's primary-button tokens, which always contrast. */
+.sk5c-apply{flex:none;height:32px;padding:0 14px;border:0;border-radius:8px;background:var(--dsw-alias-button-primary-fill,var(--dsw-alias-brand-primary));color:var(--dsw-alias-label-primary-foreground,#fff);font-size:12.5px;cursor:pointer}
+.sk5c-apply:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover,var(--dsw-alias-button-primary-fill,var(--dsw-alias-brand-primary)))}
+.sk5c-apply:disabled{opacity:.55;cursor:not-allowed}
+.sk5c-switch-row{display:flex;align-items:center;gap:12px;margin-top:14px}
+.sk5c-switch-text{flex:1;min-width:0;font-size:12px;line-height:1.45;color:var(--sk5c-muted)}
+.sk5c-switch{position:relative;flex:none;width:36px;height:20px;padding:0;border:0;border-radius:999px!important;background:var(--sk5c-input);cursor:pointer;transition:background-color .16s ease}
+.sk5c-switch.is-on{background:var(--dsw-alias-button-primary-fill,var(--sk5c-primary))}
+.sk5c-switch:focus-visible{outline:2px solid var(--sk5c-primary);outline-offset:2px}
+.sk5c-switch-knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%!important;background:var(--dsw-alias-switch-thumb,var(--dsw-static-neutral-bluish-00));box-shadow:0 1px 2px rgb(0 0 0 / .25);transition:transform .16s ease}
+.sk5c-switch.is-on .sk5c-switch-knob{transform:translateX(16px)}
+.sk5c-actions{display:flex;gap:8px;margin-top:12px}
+.sk5c-reset{height:32px;padding:0 12px;border:1px solid var(--sk5c-input);border-radius:8px!important;background:transparent;color:var(--sk5c-fg);font-size:12.5px;cursor:pointer}
+.sk5c-reset:hover:not(:disabled){background:var(--sk5c-inset)}
+.sk5c-reset:disabled{opacity:.55;cursor:not-allowed}
+.sk5c-note{margin:8px 0 0;font-size:11.5px;color:var(--sk5c-tertiary)}
+.sk5c-note.is-error{color:var(--dsw-alias-state-error-primary)}
+/* The host's global reset rewrites border-radius on plain elements (the same
+   reason the composer seat pins its dot radii), which turned these circles
+   into rounded squares. Re-assert the design's geometry. */
+.sk5c-panel{border-radius:14px!important}
+.sk5c-row{border-radius:8px!important}
+.sk5c-mode,.sk5c-master{border-radius:9px!important}
+.sk5c-chip,.sk5c-preset{border-radius:7px!important}
+.sk5c-hue{border-radius:999px!important}
+.sk5c-sv{border-radius:8px!important}
+.sk5c-input,.sk5c-apply{border-radius:8px!important}
+@media (min-width:900px){.sk5c-panel{grid-template-columns:minmax(0,1fr) 340px}.sk5c-panel > .sk5c-palette{border-top:0;border-left:1px solid var(--sk5c-border)}}` 
 
 /**
  * Keep the existing Latin-label line box on each platform. A fixed numeric
@@ -303,6 +472,62 @@ function fadeAt(fx: number): number {
 }
 
 /**
+ * Settings namespace of this bundle's Host entry. `@deepseek-ai/dsh-settings`
+ * keys a namespace by the Loader entry's declared id, which is the row id in
+ * `cordis.patch.yml`; a Loader that nests the profile patch under its `include`
+ * group may present the id with that parent prefix instead, so both spellings
+ * are watched and whichever the Host serves is used.
+ */
+const SETTINGS_NS = 'ui-skin-switcher'
+const SETTINGS_NS_NESTED = 'include:ui-skin-switcher'
+/** `plugins.bundle.config` is keyed by the bundle's package name. */
+const BUNDLE_KEY = '@domitor-syh/dsh-ui-skin-switcher'
+
+/**
+ * Publish the stored palette and contribute the colour switcher to this
+ * bundle's own page.
+ *
+ * Both are gated on the settings namespace actually being served: a Host
+ * without the `configForms` service, or without this entry's `Config` schema,
+ * registers nothing, and the composer keeps its shipped colours. The
+ * registration rides `whileServed`, so a deployment that stops serving the
+ * namespace also takes the section away instead of leaving a dead control.
+ * @param ctx - client root context.
+ */
+function bindColorSettings(ctx: any): void {
+  if (typeof ctx.inject !== 'function') return
+  ctx.inject(['configForms'], (sub: any) => {
+    const forms = sub.configForms
+    if (forms === undefined || forms === null || typeof forms.whileServed !== 'function') return
+    sub.effect(() => forms.whileServed(
+      [SETTINGS_NS, SETTINGS_NS_NESTED],
+      (served: Set<string>) => {
+        const namespace = served.has(SETTINGS_NS) ? SETTINGS_NS : SETTINGS_NS_NESTED
+        const form = forms.get(namespace)
+        const publish = () => {
+          const value = form.getSnapshot().value
+          setPalette(readPaletteConfig(value), readFollowSeat(value))
+        }
+        publish()
+        const unsubscribe = form.subscribe(publish)
+        const registration = sub.slots.inject('plugins.bundle.config', () => sub.slots.register(
+          { name: 'plugins.bundle.config', key: BUNDLE_KEY, locale: NS, inject: () => ({ t: sub.locale.bind(NS) }) },
+          (props: any) => (props.view === 'summary'
+            ? null
+            : React.createElement(ColorSection, { form, t: sub.locale.bind(NS) })),
+        ))
+        return () => {
+          if (typeof unsubscribe === 'function') unsubscribe()
+          if (typeof registration === 'function') registration()
+          else if (registration !== undefined && typeof registration.dispose === 'function') registration.dispose()
+          setPalette(null, false)
+        }
+      },
+    ), 'ui-skin-switcher: colour settings')
+  })
+}
+
+/**
  * Client plugin body: inject the stylesheet once, then register the composer
  * model seat whose component reads `sessions.models` and writes
  * `sessions.selectModel`.
@@ -342,6 +567,7 @@ export function apply(ctx: any): void {
 
   ctx.effect(() => injectCss(CSS))
   ctx.effect(() => ctx.locale.register(NS, DICTS), 'ui-skin-switcher: dictionaries')
+  bindColorSettings(ctx)
 
   ctx.slots.inject('conversation.input.model', () => ctx.slots.register(
     { name: 'conversation.input.model', priority: -1, locale: NS },
@@ -368,6 +594,8 @@ export function apply(ctx: any): void {
       const busyRef = React.useRef(false)
       const pendingRef = React.useRef<any>(null)
       const [settledIdx, setSettledIdx] = React.useState<any>(null)
+      /** Live palette from the plugin's own settings; null keeps the shipped colours. */
+      const paletteColors = usePaletteColors()
 
       /** This session's shared directory — the official selector's own data source. */
       const directory = React.useMemo(() => directoryOf(sessionId), [sessionId])
@@ -547,15 +775,20 @@ export function apply(ctx: any): void {
         const l = 0.299 * rgb[0]! + 0.587 * rgb[1]! + 0.114 * rgb[2]!
           return rgb.map((v) => Math.round(v + (l - v) * f))
         }
-        const deep = desat([65, 118, 230], 0.15)
-        const lightMax = desat([103, 158, 254], 0.15)
         /**
-         * How far the lightest cells reach past deepseek-400 (103,158,254)
-         * toward deepseek-300 (183,200,254): a small lift reads lighter without
-         * going pale. This is the knob for "a touch lighter".
+         * The two cell colours come from the palette: the resting cells are the
+         * grid slot pulled slightly toward its luminance (a printed dot reads
+         * calmer than the flat fill), and the flash peak is the blink slot as
+         * picked. At the shipped palette this reproduces the previous
+         * hard-coded pair exactly.
          */
-        const lightLift = 0.3
-        const lightPeak = lightMax.map((v, i) => Math.round(v + ([183, 200, 254][i]! - v) * lightLift))
+        const rgbOf = (hex: string, fallback: number[]): number[] => {
+          const parsed = parseHex(hex)
+          return parsed === null ? fallback : [parsed.r, parsed.g, parsed.b]
+        }
+        const livePalette = paletteColors ?? DEFAULT_PALETTE
+        const deep = desat(rgbOf(livePalette.gridNormal, [65, 118, 230]), 0.15)
+        const lightPeak = rgbOf(livePalette.gridBlink, [132, 170, 244])
         /** Overall right-to-left sweep duration of the reveal. */
         const revealMs = 1800
         /**
@@ -661,7 +894,7 @@ export function apply(ctx: any): void {
           }
         }
         return out
-      }, [inMax, grid])
+      }, [inMax, grid, paletteColors])
 
       React.useEffect(() => {
         const id = setTimeout(() => setSettledIdx(safePosIdx), 160)
@@ -781,7 +1014,11 @@ export function apply(ctx: any): void {
                 disabled: locked || busy || current === null, title: tr('effort.title'),
                 'aria-haspopup': 'menu', 'aria-expanded': menu === 'effort',
                 onClick: () => setMenu((m: any) => (m === 'effort' ? null : 'effort')),
-              }, React.createElement('span', { key: displayLabel, style: { animation: 'sk5-nameBlur .28s ease' } }, displayLabel))
+              }, React.createElement('span', {
+                key: displayLabel,
+                className: 'sk5-effortSeat' + (choices.length > 1 && inMax ? ' sk5-effortSeatMax' : ''),
+                style: { animation: 'sk5-nameBlur .28s ease' },
+              }, displayLabel))
             : null,
         ),
         menu === 'model'
@@ -861,7 +1098,7 @@ export function apply(ctx: any): void {
                       matrixCells.map((sq: any) => React.createElement('div', { key: sq.key, className: 'sk5-cell', style: { animationDelay: sq.appearDelay } },
                         React.createElement('div', {
                           className: 'sk5-sq',
-                          style: { background: 'var(--dsw-static-deepseek-500)', opacity: sq.fade, animationDelay: sq.animationDelay, animationDuration: sq.flashDuration, borderRadius: grid.radius + 'px', '--flash-light': sq.flashLight,
+                          style: { background: 'var(--sk5-c-grid,var(--dsw-static-deepseek-500))', opacity: sq.fade, animationDelay: sq.animationDelay, animationDuration: sq.flashDuration, borderRadius: grid.radius + 'px', '--flash-light': sq.flashLight,
             '--flash-deep': sq.flashDeep },
                         }),
                       )),
