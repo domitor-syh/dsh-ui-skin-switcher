@@ -1,7 +1,7 @@
 {
   "name": "@domitor-syh/dsh-ui-skin-switcher",
   "description": "Model and reasoning-effort switcher: composer seat with an Off/Max effort slider over session.models / session.selectModel",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "icon": "icon.png",
   "publishConfig": {
     "access": "public"
@@ -15,6 +15,7 @@
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
+    "./locale/*.json": "./locale/*.json",
     "./package.json": "./package.json"
   },
   "engines": {
@@ -54,6 +55,7 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
+    "locale",
     "cordis.patch.yml",
     "CHANGELOG.md",
     "icon.png"

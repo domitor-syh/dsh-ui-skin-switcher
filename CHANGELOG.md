@@ -4,6 +4,16 @@
 
 This project follows [Semantic Versioning](https://semver.org/). Pick a version below to see what changed.
 
+## [0.3.1] — 2026-11-12
+
+**中文**
+
+- 插件列表与设置里的显示名称、简介改为随界面语言切换：新增 `locale/zh.json`、`locale/en.json` 的 `meta.title` / `meta.description`。
+
+**English**
+
+- The plugin list and Settings now show a localized display name and description, read from `meta.title` / `meta.description` in `locale/zh.json` and `locale/en.json`.
+
 ## [0.3.0] — 2026-11-12
 
 **中文**
