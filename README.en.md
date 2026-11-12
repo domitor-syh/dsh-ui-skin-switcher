@@ -47,6 +47,14 @@ https://github.com/user-attachments/assets/3e60e874-4d08-44b3-be00-5e5ab213187c
 
 **▶︎ [Watch the full demo video](https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4)** — model switching, the effort slider, and the top-level dot-matrix animation.
 
+**DIY colour panel** — tune the whole interface palette from the plugin's detail page:
+
+<div align="center">
+
+<img src="docs/diy-color-panel-en.png" alt="DIY colour panel" width="100%">
+
+</div>
+
 ## Install
 
 **Web** (`dsh web`):

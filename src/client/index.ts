@@ -318,6 +318,8 @@ const CSS =
   '.sk5-matrix{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;border-radius:9px!important;pointer-events:none;z-index:1;box-sizing:border-box;display:grid;gap:1px;justify-content:start;align-content:start;}' +
   '.sk5-cell{width:100%;height:100%;opacity:0;animation:sk5-appear .6s ease forwards;}' +
   '@keyframes sk5-appear{from{opacity:.1}to{opacity:1}}' +
+  '/* Parked noise band: the leftmost columns keep shimmering after the sweep ends. */' +
+  '@keyframes sk5-hold{0%{opacity:.1}8%{opacity:1}24%{opacity:var(--sk5-hold-min,.18)}38%{opacity:1}55%{opacity:var(--sk5-hold-mid,.62)}72%{opacity:1}88%{opacity:var(--sk5-hold-min,.18)}100%{opacity:1}}' +
   '.sk5-sq{width:100%;height:100%;border-radius:1px;animation:sk5-flash 1.45s infinite ease-in-out;}' +
   '/* One flash cycle: hold blue 250ms, jump to light, hold light 480ms, fade back over 720ms. */' +
     '@keyframes sk5-flash{0%,29.41%{background:var(--sk5-c-grid,var(--dsw-static-deepseek-500))}29.42%,57.65%{background:var(--flash-light,var(--sk5-c-blink,var(--dsw-static-deepseek-400)))}100%{background:var(--sk5-c-grid,var(--dsw-static-deepseek-500))}}' +
@@ -767,7 +769,6 @@ export function apply(ctx: any): void {
       const inMax = choices.length > 1 && safeDisplayIdx === choices.length - 1
       const matrixVisible = inMax && atMaxPos
       const posPct = choices.length > 1 ? (posIdx / (choices.length - 1)) * 100 : 0
-
       const matrixCells = React.useMemo(() => {
         if (!inMax || grid === null) return []
         /** Blend a colour toward its own luminance: same hue, less saturation. */
@@ -882,6 +883,18 @@ export function apply(ctx: any): void {
             const stagger = (cellUnit(r, c, 4) * 2 - 1) * staggerMs
             const nu = Math.max(0, Math.min(1, u + stage / (grid.c - 1) + stagger / revealMs))
             const appearDelay = ((revealMs * nu) / 1000).toFixed(3) + 's'
+            const appearMs = nu * revealMs
+            // 0.7.2 behaviour plus a density ramp. The dimming brightness does
+            // not change, only how many cells take part: almost none at the
+            // band's right edge (so the junction has no step) and every cell a
+            // short way in, so going left the bright squares thin out like an
+            // exhaust plume. The ramp leans right because the fade mask eats
+            // the left end and the visible part has to carry the transition.
+            const bandCols = Math.max(noiseLeadCols, Math.round(grid.c / 3))
+            const bandPos = c < bandCols ? c / Math.max(1, bandCols - 1) : 1 // 0 = left end, 1 = right edge
+            const holdChance = Math.max(0, Math.min(1, 2.5 * Math.pow(1 - bandPos, 1.5))) *
+              (1 - 0.5 * Math.pow(Math.max(0, 0.4 - bandPos) / 0.4, 1.5))
+            const hold = c < bandCols && cellUnit(r, c, 14) < holdChance
             out.push({
               key: r + '-' + c,
               flashLight: 'rgb(' + lc[0] + ',' + lc[1] + ',' + lc[2] + ')',
@@ -889,6 +902,11 @@ export function apply(ctx: any): void {
               animationDelay: flashDelay,
               flashDuration: flashDuration,
               appearDelay: appearDelay,
+              hold: hold,
+              holdMin: (0.06 + 0.12 * bandPos).toFixed(3),
+              holdMid: (0.35 + 0.27 * bandPos).toFixed(3),
+              holdDuration: (1.6 + cellUnit(r, c, 9) * 1.8).toFixed(2) + 's',
+              holdDelay: (appearMs / 1000).toFixed(3) + 's',
               fade: fadeAt(fx),
             })
           }
@@ -1084,25 +1102,43 @@ export function apply(ctx: any): void {
                   style: { width: fillWidth, background: fillSolid, opacity: fillHidden ? 0 : 1 },
                 }),
                 matrixVisible && grid !== null
-                  ? React.createElement('div', {
-                      className: 'sk5-matrix',
-                      style: {
+                  ? (() => {
+                      const gridStyle = {
                         gridTemplateColumns: 'repeat(' + grid.c + ',' + grid.sq + 'px)',
                         gridTemplateRows: 'repeat(' + grid.r + ',' + grid.sq + 'px)',
                         gap: grid.gap + 'px',
                         padding: grid.padTop + 'px ' + grid.padRight + 'px ' + grid.padBottom + 'px ' + grid.padLeft + 'px',
                         justifyContent: 'start',
                         alignContent: 'start',
+                      }
+                      return React.createElement('div', {
+                        className: 'sk5-matrix',
+                        style: gridStyle,
                       },
-                    },
-                      matrixCells.map((sq: any) => React.createElement('div', { key: sq.key, className: 'sk5-cell', style: { animationDelay: sq.appearDelay } },
-                        React.createElement('div', {
-                          className: 'sk5-sq',
-                          style: { background: 'var(--sk5-c-grid,var(--dsw-static-deepseek-500))', opacity: sq.fade, animationDelay: sq.animationDelay, animationDuration: sq.flashDuration, borderRadius: grid.radius + 'px', '--flash-light': sq.flashLight,
+                        matrixCells.map((sq: any) => React.createElement('div', {
+                          key: sq.key,
+                          className: 'sk5-cell' + (sq.hold ? ' sk5-cellHold' : ''),
+                          style: sq.hold
+                            ? {
+                                animationName: 'sk5-appear, sk5-hold',
+                                animationDuration: '.6s, ' + sq.holdDuration,
+                                animationDelay: sq.appearDelay + ', ' + sq.holdDelay,
+                                animationIterationCount: '1, infinite',
+                                animationFillMode: 'forwards, none',
+                                animationTimingFunction: 'ease, ease-in-out',
+                                '--sk5-hold-min': sq.holdMin,
+                                '--sk5-hold-mid': sq.holdMid,
+                              }
+                            : { animationDelay: sq.appearDelay },
+                        },
+                          React.createElement('div', {
+                            className: 'sk5-sq',
+                            style: { background: 'var(--sk5-c-grid,var(--dsw-static-deepseek-500))', opacity: sq.fade, animationDelay: sq.animationDelay, animationDuration: sq.flashDuration, borderRadius: grid.radius + 'px', '--flash-light': sq.flashLight,
             '--flash-deep': sq.flashDeep },
-                        }),
-                      )),
-                    )
+                          }),
+                        )),
+                      )
+                    })()
                   : null,
                 !inMax
                   ? choices.map((c: any, i: number) => React.createElement('span', {

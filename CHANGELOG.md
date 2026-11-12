@@ -4,71 +4,27 @@
 
 This project follows [Semantic Versioning](https://semver.org/). Pick a version below to see what changed.
 
-## [0.4.0] — 2026-11-10
+## [0.3.0] — 2026-11-12
 
 **中文**
 
-- 新增「重置颜色」按钮：一键恢复插件自带的蓝色（主色 `#679EFE`、六项自动派生、清空逐项自定义），并立即写回配置。
-- 新增「最高思考强度文字跟随档位值颜色」开关：开启后，座位上的最高强度文字使用弹窗档位值颜色；关闭则保持中性的座位文字色。开关即时预览并持久化。
-- 修复思考强度滑块手柄在浅色模式下多出的投影：浅色模式曾额外叠加 `0 0 3px` 阴影，看起来比深色模式“凸起”；现在两种外观共用同一套手柄样式（以深色模式为准）。
-- 含 0.3.2 的修复：色相轨道胶囊圆角、拖到最右端不再回弹。
+- 新增「颜色切换器」（插件详情页）：可调主色并自动派生其余五项（弹层档位值、档位圆点、滑块把手、滑块外发光、点阵底色、点阵闪烁），派生在 OKLab 感知空间完成；主色保持 `#679EFE` 时与旧版配色逐位一致。
+- 支持「逐项自定义配色」：六项可分别取色，留空项继续跟随主色；调整即时预览，点「应用」后写入插件配置，重启后保留。
+- 新增「重置颜色」按钮与「最高思考强度文字跟随档位值颜色」开关。
+- 取色器：色相条 + 饱和度/明度区 + 色码输入（#RGB / #RRGGBB / #RRGGBBAA）；滑块改用 SVG 圆；「应用」使用宿主主按钮令牌；配色区块跟随系统明暗主题。
+- 最高思考强度点阵动画：从右向左扫过，前沿带噪声；噪声在轨道左侧 1/3 停住并持续闪烁，密度从左到右渐稀，明暗深度随密度递减。
+- 修复浅色模式下滑块手柄多出的投影；修复色相滑块拖到最右端会回弹。
+- 适配目标为 DSH `0.2.2-rc.1`，兼容范围 `>=0.1.5-alpha.1`。
 
 **English**
 
-- Added a "Reset colours" button: restores the shipped blue in one press (master `#679EFE`, all six slots derived, per-slot overrides cleared) and writes it back immediately.
-- Added a "Top-effort text follows the effort-value colour" switch: when on, the seat's top-effort label uses the popover effort-value colour; when off it keeps the neutral seat colour. The switch previews immediately and persists.
-- Fixed the extra shadow on the effort slider handle in light mode: light mode added a `0 0 3px` shadow that made the handle look raised compared with dark mode. Both appearances now share one handle style, using dark mode as the reference.
-- Includes the 0.3.2 fixes: pill-shaped hue track and no jump-back at the far right.
-
-## [0.3.2] — 2026-11-09
-
-**中文**
-
-- 修复色相滑块拖到最右端后弹回最左端：颜色取整成 hex 后，`359.9°` 这一类接近 360° 的色相会被量化成纯红并读回 `0°`；现在拖动时保留用户实际选中的色相，仅在从色码/预设等外部来源取色时重新换算。
-- 色相轨道改为胶囊圆角（`border-radius: 999px`），即高度一半的标准圆角。
-- 其余与 0.3.1 一致：SVG 圆形滑块、跟随系统明暗主题、应用按钮使用宿主主按钮令牌。
-
-**English**
-
-- Fixed the hue thumb snapping back to the far left: after quantisation to a hex value, hues just below 360° (such as `359.9°`) collapse to pure red and read back as `0°`. The picked hue is now kept while dragging and only re-derived when the colour comes from another source (hex field, presets).
-- The hue track is a full pill (`border-radius: 999px`, i.e. half its height).
-- Everything else matches 0.3.1: SVG circular thumbs, host light/dark appearance, and primary-button tokens for Apply.
-
-## [0.3.1] — 2026-11-09
-
-**中文**
-
-- 取色器的色相滑块与饱和度/明度滑块改由 SVG 圆绘制：宿主会重置普通元素的 `border-radius`，此前的圆角方块即由此而来。
-- 修复色相滑块拖到最右端会跳到最左端的问题：色相上限取 `359.9°`，避免 `hsl(360)` 在 RGB 往返后读回 `0°`。
-- 「配色方式」标题去掉左侧图标；颜色区块整体改为跟随系统明暗主题。
-- 「应用」按钮改用宿主主按钮的填充/文字令牌：修复深色主题下白底白字导致按钮不可见的问题。
-- 取色器几何与描边沿用设计稿：16px 色相条、正方形饱和度/明度区、实心圆滑块。
-
-**English**
-
-- Hue and saturation/brightness thumbs are now drawn as SVG circles: the host reset rewrites `border-radius` on plain elements, which is why they rendered as rounded squares.
-- Fixed the hue thumb jumping from the far right to the far left: hue now tops out at `359.9°`, so the RGB round trip cannot read `hsl(360)` back as `0°`.
-- Removed the icon beside the palette-mode heading; the colour section now follows the host light/dark appearance.
-- The Apply button uses the host's primary-button fill/label tokens, fixing the invisible white-on-white button in dark mode.
-- Picker geometry and strokes follow the design: 16px hue bar, square saturation/brightness field, solid circular thumbs.
-
-## [0.3.0] — 2026-11-09
-
-**中文**
-
-- 新增「颜色切换器」：在插件详情页内调整思考强度座位的六项配色（弹层档位值、档位圆点、滑块把手、滑块外发光、点阵底色、点阵闪烁），调整即时预览、点击「应用」后保存到插件配置，重启后仍然生效。
-- 默认按主色（弹层档位值）自动派生其余五项，派生在 OKLab 感知色彩空间完成；把主色设为原来的 `#679EFE` 时，六项颜色与旧版逐位一致。
-- 支持逐项自定义：切换到「逐项自定义配色」后六项可分别取色，留空的项继续跟随主色。
-- 未安装设置服务或不提供本插件配置的宿主上不显示该区块，配色保持原样。
-- 适配目标仍为 DSH `0.2.2-rc.1`；兼容范围保持 `>=0.1.5-alpha.1`。
-
-**English**
-
-- Added a colour switcher on the plugin's own detail page for the six effort-seat colours (effort value, effort dot, slider handle, slider glow, dot matrix, matrix flash). Edits preview immediately; Apply saves them to the plugin configuration, so they survive a restart.
-- By default all five other slots derive from the main colour (the effort value) in OKLab perceptual space; keeping `#679EFE` reproduces the previous palette byte for byte.
-- Per-slot customisation is available: switch to "Customise each slot" and pick each colour independently; cleared slots keep following the main colour.
-- The section stays hidden on hosts without the settings service or without this plugin's configuration schema, and the shipped colours remain.
-- Adaptation target stays DSH `0.2.2-rc.1`; the supported range stays `>=0.1.5-alpha.1`.
+- Added the colour switcher on the plugin detail page: one main colour derives the other five slots (effort value, effort dot, slider handle, slider glow, dot-matrix base, matrix flash) in OKLab space; keeping `#679EFE` reproduces the previous palette byte for byte.
+- "Customise each slot" lets all six colours be picked independently; cleared slots keep following the main colour. Edits preview live and are written to the plugin configuration when applied, so they survive a restart.
+- Added "Reset colours" and the "Top-effort text follows the effort-value colour" switch.
+- Picker: hue bar, saturation/brightness field and a hex field (#RGB / #RRGGBB / #RRGGBBAA); thumbs are SVG circles; Apply uses the host primary-button tokens; the colour section follows the host light/dark appearance.
+- Max-effort dot-matrix animation: a right-to-left sweep with a noisy front; the noise stops on the left third of the track and keeps flickering, thinning out towards the junction with a matching dim-depth ramp.
+- Fixed the extra slider-handle shadow in light mode and the hue thumb snapping back at the far right.
+- Adapts to DSH `0.2.2-rc.1`; supported range `>=0.1.5-alpha.1`.
 
 ## [0.2.6] — 2026-10-26
 

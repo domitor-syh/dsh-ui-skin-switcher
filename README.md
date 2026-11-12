@@ -53,6 +53,14 @@ https://github.com/user-attachments/assets/3e60e874-4d08-44b3-be00-5e5ab213187c
 
 **▶︎ [点击观看完整演示视频](https://cdn.jsdelivr.net/gh/domitor-syh/dsh-ui-skin-switcher@main/docs/dsh-ui-skin-switcher-demo.mp4)** —— 模型切换、思考强度滑块、最高档点阵动画的完整演示。
 
+**DIY 调色器** —— 在插件详情页里调整整套界面配色：
+
+<div align="center">
+
+<img src="docs/diy-color-panel-zh.png" alt="DIY 调色器" width="100%">
+
+</div>
+
 ## 安装
 
 **Web 端**（`dsh web`）：
