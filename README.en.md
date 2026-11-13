@@ -89,3 +89,5 @@ Why follow the vendor's documentation? To keep declarations accurate — **accur
 ## License
 
 [MIT](./LICENSE)
+
+The bundled Space Grotesk font is distributed under the SIL OFL 1.1; the full licence is in [LICENSES/SpaceGrotesk-OFL.txt](./LICENSES/SpaceGrotesk-OFL.txt).

@@ -10,6 +10,7 @@
  */
 import * as React from 'react'
 import { ColorSection } from './color-section.js'
+import { setFollowLocale, useFollowLocale } from './i18n.js'
 import { parseHex } from './palette.js'
 import { DEFAULT_PALETTE, readFollowSeat, readPaletteConfig, setPalette, usePaletteColors } from './palette-store.js'
 
@@ -37,6 +38,8 @@ const DICTS: Record<'zh' | 'en', Record<string, string>> = {
     'trigger.selectModel': '选择模型',
     'effort.title': '思考强度',
     'effort.default': '默认',
+    'effort.faster': '更快',
+    'effort.smarter': '更聪明',
     'menu.models': '模型',
     'status.loading': '加载中…',
     'status.noModels': '暂无可用模型',
@@ -60,6 +63,8 @@ const DICTS: Record<'zh' | 'en', Record<string, string>> = {
     'color.apply': '应用',
     'color.reset': '重置颜色',
     'color.followSeat': '最高思考强度文字跟随档位值颜色',
+    'color.followLocale': '跟随DSH系统界面语言',
+    'color.followLocale.hint': '默认关闭，关闭时默认语言为英文',
     'color.saving': '保存中…',
     'color.saved': '已保存',
     'color.previewHint': '调整即时预览，应用后写入插件配置',
@@ -77,8 +82,10 @@ const DICTS: Record<'zh' | 'en', Record<string, string>> = {
   en: {
     'trigger.fallbackModel': 'Model',
     'trigger.selectModel': 'Select model',
-    'effort.title': 'Reasoning effort',
+    'effort.title': 'Effort',
     'effort.default': 'Default',
+    'effort.faster': 'Faster',
+    'effort.smarter': 'Smarter',
     'menu.models': 'Models',
     'status.loading': 'Loading…',
     'status.noModels': 'No models available',
@@ -102,6 +109,8 @@ const DICTS: Record<'zh' | 'en', Record<string, string>> = {
     'color.apply': 'Apply',
     'color.reset': 'Reset colours',
     'color.followSeat': 'Top-effort text follows the effort-value colour',
+    'color.followLocale': 'Follow the DSH interface language',
+    'color.followLocale.hint': 'Off by default; while off the plugin uses English',
     'color.saving': 'Saving…',
     'color.saved': 'Saved',
     'color.previewHint': 'Edits preview live and are written to the plugin configuration when applied',
@@ -399,12 +408,22 @@ const CSS =
 .sk5c-apply{flex:none;height:32px;padding:0 14px;border:0;border-radius:8px;background:var(--dsw-alias-button-primary-fill,var(--dsw-alias-brand-primary));color:var(--dsw-alias-label-primary-foreground,#fff);font-size:12.5px;cursor:pointer}
 .sk5c-apply:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover,var(--dsw-alias-button-primary-fill,var(--dsw-alias-brand-primary)))}
 .sk5c-apply:disabled{opacity:.55;cursor:not-allowed}
+.sk5c-locale{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 14px;border:1px solid var(--sk5c-border);border-radius:10px!important;background:var(--sk5c-card)}
+.sk5c-locale-text{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;row-gap:1px}
+.sk5c-locale-title{font-size:13px}
+.sk5c-locale-hint{font-size:11.5px;color:var(--sk5c-tertiary)}
 .sk5c-switch-row{display:flex;align-items:center;gap:12px;margin-top:14px}
 .sk5c-switch-text{flex:1;min-width:0;font-size:12px;line-height:1.45;color:var(--sk5c-muted)}
-.sk5c-switch{position:relative;flex:none;width:36px;height:20px;padding:0;border:0;border-radius:999px!important;background:var(--sk5c-input);cursor:pointer;transition:background-color .16s ease}
-.sk5c-switch.is-on{background:var(--dsw-alias-button-primary-fill,var(--sk5c-primary))}
-.sk5c-switch:focus-visible{outline:2px solid var(--sk5c-primary);outline-offset:2px}
-.sk5c-switch-knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%!important;background:var(--dsw-alias-switch-thumb,var(--dsw-static-neutral-bluish-00));box-shadow:0 1px 2px rgb(0 0 0 / .25);transition:transform .16s ease}
+/* Official switch geometry and colours, copied from the host's primitive with
+   the class renamed under this plugin's prefix: a 36x20 pill whose 16px thumb
+   slides 16px. "On" fills with the inverted brand colour, "off" with border-l3,
+   and the thumb flips between label-primary-foreground and switch-thumb. */
+.sk5c-switch{box-sizing:border-box;position:relative;flex:0 0 auto;width:36px;height:20px;padding:2px;border:0;border-radius:999px!important;background:var(--dsw-alias-border-l3,var(--sk5c-input));cursor:pointer;transition:background-color .16s ease}
+.sk5c-switch.is-on{background:var(--dsw-alias-brand-primary,var(--sk5c-primary))}
+.sk5c-switch:disabled{cursor:default;opacity:.5}
+.sk5c-switch:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}
+.sk5c-switch-knob{display:block;width:16px;height:16px;border-radius:50%!important;background:var(--dsw-alias-label-primary-foreground,var(--sk5c-card));transition:transform .12s ease}
+.sk5c-switch:not(.is-on) .sk5c-switch-knob{background:var(--dsw-alias-switch-thumb,var(--sk5c-tertiary))}
 .sk5c-switch.is-on .sk5c-switch-knob{transform:translateX(16px)}
 .sk5c-actions{display:flex;gap:8px;margin-top:12px}
 .sk5c-reset{height:32px;padding:0 12px;border:1px solid var(--sk5c-input);border-radius:8px!important;background:transparent;color:var(--sk5c-fg);font-size:12.5px;cursor:pointer}
@@ -501,22 +520,66 @@ function bindColorSettings(ctx: any): void {
   ctx.inject(['configForms'], (sub: any) => {
     const forms = sub.configForms
     if (forms === undefined || forms === null || typeof forms.whileServed !== 'function') return
+    /**
+     * Bootstrap the stored preference from the settings mirror. The served
+     * form below only exists while the settings page is mounted, so a freshly
+     * loaded chat must read the namespace value itself; otherwise the language
+     * switch would stay off until the settings page is opened.
+     */
+    const describe = typeof forms.describe === 'function' ? forms.describe() : undefined
+    if (describe !== undefined && describe !== null) {
+      const readMirror = () => {
+        try {
+          const state = typeof describe.getSnapshot === 'function' ? describe.getSnapshot() : null
+          const view = state?.view ?? state
+          const namespaces = Array.isArray(view?.namespaces) ? view.namespaces : []
+          const entry = namespaces.find((item: any) => item?.ns === SETTINGS_NS)
+          if (entry === undefined) return
+          setFollowLocale(entry.value?.followLocale)
+          setPalette(readPaletteConfig(entry.value), readFollowSeat(entry.value))
+        } catch {
+          /* The served form, when it exists, stays authoritative. */
+        }
+      }
+      sub.effect(() => {
+        let dispose = () => {}
+        try {
+          if (typeof describe.ensure === 'function') describe.ensure()
+          readMirror()
+          if (typeof describe.subscribe === 'function') {
+            const unsubscribe = describe.subscribe(readMirror)
+            if (typeof unsubscribe === 'function') dispose = unsubscribe
+          }
+        } catch {
+          /* Older hosts may expose a read-only mirror. */
+        }
+        return () => dispose()
+      }, 'ui-skin-switcher: stored preferences')
+    }
     sub.effect(() => forms.whileServed(
       [SETTINGS_NS, SETTINGS_NS_NESTED],
       (served: Set<string>) => {
         const namespace = served.has(SETTINGS_NS) ? SETTINGS_NS : SETTINGS_NS_NESTED
         const form = forms.get(namespace)
+        const systemT = sub.locale.bind(NS)
+        /**
+         * The panel itself speaks the DSH interface language; the language
+         * switch only affects the plugin's own UI (the model / effort seat),
+         * so it must not translate this settings page.
+         */
+        const translate = (key: string): string => systemT(key)
         const publish = () => {
           const value = form.getSnapshot().value
+          setFollowLocale(value?.followLocale)
           setPalette(readPaletteConfig(value), readFollowSeat(value))
         }
         publish()
         const unsubscribe = form.subscribe(publish)
         const registration = sub.slots.inject('plugins.bundle.config', () => sub.slots.register(
-          { name: 'plugins.bundle.config', key: BUNDLE_KEY, locale: NS, inject: () => ({ t: sub.locale.bind(NS) }) },
+          { name: 'plugins.bundle.config', key: BUNDLE_KEY, locale: NS, inject: () => ({ t: translate }) },
           (props: any) => (props.view === 'summary'
             ? null
-            : React.createElement(ColorSection, { form, t: sub.locale.bind(NS) })),
+            : React.createElement(ColorSection, { form, t: translate })),
         ))
         return () => {
           if (typeof unsubscribe === 'function') unsubscribe()
@@ -569,17 +632,60 @@ export function apply(ctx: any): void {
 
   ctx.effect(() => injectCss(CSS))
   ctx.effect(() => ctx.locale.register(NS, DICTS), 'ui-skin-switcher: dictionaries')
+
+  /**
+   * The resolved DSH interface language (`zh`, `en`, …). Older hosts may not
+   * expose `getLocale`; the empty string then means "unknown".
+   */
+  const useActiveLanguage = (): string => {
+    const locale = (ctx as any).locale
+    const subscribe = React.useCallback(
+      (onChange: () => void) =>
+        (typeof locale?.subscribe === 'function' ? locale.subscribe(onChange) : () => {}),
+      [locale],
+    )
+    const read = React.useCallback(() => {
+      try {
+        const snapshot = typeof locale?.getLocale === 'function' ? locale.getLocale() : null
+        if (typeof snapshot?.active === 'string' && snapshot.active !== '') return snapshot.active
+      } catch {
+        /* fall through to the document language */
+      }
+      /** DSH mirrors the active locale into `<html lang>` on every change. */
+      try {
+        const lang = typeof document === 'undefined' ? '' : document.documentElement?.lang
+        return typeof lang === 'string' ? lang : ''
+      } catch {
+        return ''
+      }
+    }, [locale])
+    return React.useSyncExternalStore(subscribe, read)
+  }
   bindColorSettings(ctx)
 
   ctx.slots.inject('conversation.input.model', () => ctx.slots.register(
     { name: 'conversation.input.model', priority: -1, locale: NS },
     (props: any) => {
       const { locked, sessionId, t } = props
+      /** Re-render when the plugin's language switch changes. */
+      const followLocale = useFollowLocale()
+      /** Re-render when the DSH interface language changes. */
+      const activeLanguage = useActiveLanguage()
       /**
-       * Read one dictionary key through the framework-injected `t` seat; the
-       * Chinese table backs a host that shipped no locale service.
+       * Switch off: always English. Switch on: Chinese when DSH is Chinese,
+       * English for every other interface language. The framework `t` is only
+       * a last resort for hosts that expose neither a language snapshot nor a
+       * registered dictionary.
        */
-      const tr = (key: string): string => (typeof t === 'function' ? t(key) : (DICTS.zh[key] ?? key))
+      const tr = (key: string): string => {
+        const english = DICTS.en[key]
+        const system = typeof t === 'function' ? t(key) : undefined
+        if (!followLocale) return english ?? system ?? key
+        if (activeLanguage === '') return system ?? DICTS.zh[key] ?? english ?? key
+        if (activeLanguage.startsWith('zh')) return DICTS.zh[key] ?? english ?? system ?? key
+        /** Every other host language stays English, as documented. */
+        return english ?? system ?? key
+      }
 
       const [menu, setMenu] = React.useState<any>(null)
       const [busyKind, setBusy] = React.useState<'model' | 'effort' | null>(null)
@@ -1068,7 +1174,7 @@ export function apply(ctx: any): void {
         menu === 'effort'
           ? React.createElement('div', { className: 'sk5-drop sk5-effort', role: 'menu', 'aria-label': tr('effort.title') },
               React.createElement('div', { className: 'sk5-titleRow' },
-                React.createElement('span', { className: 'sk5-effortLabel' }, 'Effort'),
+                React.createElement('span', { className: 'sk5-effortLabel' }, tr('effort.title')),
                 React.createElement('span', {
                   ref: effortValueRef,
                   key: displayLabel,
@@ -1089,8 +1195,8 @@ export function apply(ctx: any): void {
                 ),
               ),
               React.createElement('div', { className: 'sk5-labelsRow' },
-                React.createElement('span', { className: 'sk5-endLabel' }, 'Faster'),
-                React.createElement('span', { className: 'sk5-endLabel' }, 'Smarter'),
+                React.createElement('span', { className: 'sk5-endLabel' }, tr('effort.faster')),
+                React.createElement('span', { className: 'sk5-endLabel' }, tr('effort.smarter')),
               ),
               React.createElement('div', {
                 ref: trackRef, className: 'sk5-track',

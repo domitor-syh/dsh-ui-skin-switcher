@@ -1,6 +1,7 @@
 {
   "meta": {
     "title": "Claude-style reasoning picker",
-    "description": "A Claude Desktop-style model and reasoning-effort switcher that feels great to use."
+    "description": "A Claude Desktop-style model and reasoning-effort switcher that feels great to use.",
+    "detail": "README.en.md"
   }
 }

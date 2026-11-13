@@ -10,13 +10,14 @@ const bundle = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8'
 // Exercise the built Client with real React hooks and injected DSH service
 // fixtures. This does not claim browser/visual coverage; registration against
 // published DSH SlotCore versions is checked separately.
-async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true }, measureFonts = false } = {}) {
+async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true }, measureFonts = false, localeActive = '', documentLang = '', followLocale = false } = {}) {
   const subscribers = new Set()
   const measuredNodes = []
   const samples = new Set()
   let fontHeights = { trigger: '14px', value: '15px' }
   const createNode = (kind) => {
     const properties = new Map()
+    const attributes = new Map()
     return {
       kind,
       style: {
@@ -24,12 +25,17 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
         setProperty: (key, value) => properties.set(key, value),
         removeProperty: key => properties.delete(key),
       },
+      setAttribute: (key, value) => attributes.set(key, String(value)),
+      getAttribute: key => (attributes.has(key) ? attributes.get(key) : null),
+      removeAttribute: key => attributes.delete(key),
       appendChild(sample) { sample.kind = kind; samples.add(sample) },
     }
   }
   const fonts = new EventTarget()
   fonts.ready = Promise.resolve()
   const testDocument = new EventTarget()
+  testDocument.documentElement = createNode('root')
+  testDocument.documentElement.lang = documentLang
   if (measureFonts) {
     testDocument.fonts = fonts
     testDocument.createElement = () => {
@@ -92,12 +98,53 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
   vm.runInNewContext(bundle, {
     window: browser, document: testDocument, setTimeout, clearTimeout, console,
   }, { filename: 'lib/client.js' })
+  // A served settings form, so the colour section publishes the stored
+  // language preference the way the real Host does on startup.
+  const forms = followLocale
+    ? {
+        whileServed(namespaces, register) {
+          assert.equal([...namespaces].sort().join(','), 'include:ui-skin-switcher,ui-skin-switcher')
+          return register(new Set(['ui-skin-switcher']))
+        },
+        get() {
+          return {
+            getSnapshot: () => ({
+              status: 'ready',
+              value: { mode: 'auto', master: '#679EFE', followSeat: true, followLocale: true },
+              revision: 1,
+            }),
+            subscribe: () => () => {},
+            set: async () => true,
+          }
+        },
+      }
+    : undefined
   let registration
   let Component
   client.apply({
     modelDirectories: { directoryFor: () => directory },
     sessions: { subagentAddress: () => undefined },
     effect: () => () => {}, // Styles/dictionaries belong to browser integration checks.
+    inject: forms === undefined ? undefined : (deps, callback) => {
+      assert.equal(deps.length, 1)
+      assert.equal(deps[0], 'configForms')
+      callback({
+        configForms: forms,
+        effect: (factory) => {
+          const dispose = factory()
+          return () => { if (typeof dispose === 'function') dispose() }
+        },
+        locale: { register: () => () => {}, bind: () => key => key },
+        slots: { inject: (key, factory) => factory(), register: () => () => {} },
+      })
+      return () => {}
+    },
+    locale: {
+      register: () => () => {},
+      bind: () => key => key,
+      getLocale: () => ({ active: localeActive }),
+      subscribe: () => () => {},
+    },
     slots: {
       inject(key, callback) { assert.equal(key, 'conversation.input.model'); return callback() },
       register(options, component) {
@@ -142,6 +189,27 @@ function text(node) {
   if (Array.isArray(node)) return node.map(text).join('')
   return text(node.children)
 }
+
+test('the seat stays English while the language switch is off, even on a Chinese host', async t => {
+  const ui = await mount(t, { localeActive: 'zh' })
+  await ui.showModels()
+  assert.match(text(ui.tree.toJSON()), /Models/)
+  assert.doesNotMatch(text(ui.tree.toJSON()), /模型/)
+})
+
+test('the seat speaks Chinese once the switch is on and the host is Chinese', async t => {
+  const ui = await mount(t, { localeActive: 'zh', followLocale: true })
+  await ui.showModels()
+  assert.match(text(ui.tree.toJSON()), /模型/)
+  assert.doesNotMatch(text(ui.tree.toJSON()), /Models/)
+})
+
+test('the seat falls back to the document language when the locale service is quiet', async t => {
+  const ui = await mount(t, { documentLang: 'zh-CN', followLocale: true })
+  await ui.showModels()
+  assert.match(text(ui.tree.toJSON()), /模型/)
+  assert.doesNotMatch(text(ui.tree.toJSON()), /Models/)
+})
 
 test('the selector shadows the official entry without redeclaring its children', async t => {
   const ui = await mount(t)
@@ -225,7 +293,7 @@ test('effort line boxes use separate native font metrics across default-label re
   })
   assert.equal(heightOf(oldValue), '', 'Discarded keyed labels release their override')
   await ui.update({ ...ui.snapshot(), current: { provider: 'deepseek-official', model: model.id } })
-  assert.match(text(ui.tree.toJSON()), /默认/)
+  assert.match(text(ui.tree.toJSON()), /Default/)
   assert.equal(heightOf(ui.measuredNodes[0]), '14px')
   assert.equal(heightOf(ui.measuredNodes.at(-1)), '15px')
   await ui.fontLoaded({ trigger: '16.5px', value: '17px' })

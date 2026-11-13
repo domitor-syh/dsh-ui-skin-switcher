@@ -4,15 +4,27 @@
 
 This project follows [Semantic Versioning](https://semver.org/). Pick a version below to see what changed.
 
-## [0.3.1] — 2026-11-12
+## [0.3.1] — 2026-11-13
 
 **中文**
 
-- 插件列表与设置里的显示名称、简介改为随界面语言切换：新增 `locale/zh.json`、`locale/en.json` 的 `meta.title` / `meta.description`。
+- 插件列表与设置页的显示名称、简介随 DSH 界面语言切换（`locale/zh.json`、`locale/en.json` 的 `meta.title` / `meta.description`）。
+- 详情页的说明文档随界面语言切换：中文读 `README.md`，英文读 `README.en.md`（`meta.detail`）。
+- 插件设置区新增「跟随DSH系统界面语言」开关（默认关闭）：关闭时弹窗（模型、Effort、Faster、Smarter、思考强度等）一律英文；开启时仅当 DSH 界面为中文才显示中文，其它语言一律英文。详情页本身始终跟随 DSH 语言，不受此开关影响。
+- 弹窗内的「Effort」标题与「Faster / Smarter」两端文案随语言切换（中文为「思考强度」「更快 / 更聪明」），英文标题保持 “Effort”。
+- 修复开关已保存、刷新后弹窗仍为英文：聊天页启动时直接读取设置镜像，语言识别在 locale 服务不可用时回退到 `<html lang>`。
+- 详情页的两个开关改用宿主同款样式：36×20 胶囊 + 16px 圆形滑块，浅色开启为深底浅钮，深色相反。
+- 补充第三方字体声明：界面内嵌的 Space Grotesk 以 SIL OFL 1.1 分发，完整许可见 `LICENSES/SpaceGrotesk-OFL.txt`。
 
 **English**
 
-- The plugin list and Settings now show a localized display name and description, read from `meta.title` / `meta.description` in `locale/zh.json` and `locale/en.json`.
+- The plugin list and Settings now show a display name and description in the DSH interface language (`meta.title` / `meta.description` in `locale/zh.json` and `locale/en.json`).
+- The bundle detail document follows the interface language: Chinese reads `README.md`, English reads `README.en.md` (`meta.detail`).
+- Added the "Follow the DSH interface language" switch in the plugin settings (off by default): while off the popover (model, Effort, Faster, Smarter, reasoning-effort help) stays English; while on it shows Chinese only for a Chinese DSH interface and English for every other language. The bundle page itself always follows the DSH language and is unaffected.
+- The popover title "Effort" and the "Faster / Smarter" slider ends follow the language too (Chinese: 思考强度, 更快 / 更聪明); the English title stays "Effort".
+- Fixed the switch being saved while the popover stayed English after a reload: the chat now reads the stored preference from the settings mirror at startup, and language detection falls back to `<html lang>` when the locale service is unavailable.
+- Both switches on the detail page now use the host switch: a 36×20 pill with a 16px thumb, dark fill with a light thumb when on in light mode, reversed in dark mode.
+- Added a third-party font notice: the embedded Space Grotesk is distributed under the SIL OFL 1.1; the full licence is in `LICENSES/SpaceGrotesk-OFL.txt`.
 
 ## [0.3.0] — 2026-11-12
 

@@ -16,6 +16,7 @@
  */
 import * as React from 'react'
 import { DEFAULT_MASTER, deriveFromMaster, mixHex, parseHex, SLOT_KEYS, toHex } from './palette.js'
+import { setFollowLocale, useFollowLocale } from './i18n.js'
 import { readFollowSeat, readPaletteConfig, setPalette, type PaletteColors } from './palette-store.js'
 
 type SlotKey = keyof PaletteColors
@@ -155,6 +156,8 @@ export function ColorSection({ form, t }: ColorSectionProps): any {
   const [busy, setBusy] = React.useState(false)
   /** Seat-follow switch; mirrors the stored value and updates optimistically. */
   const [followSeat, setFollowSeat] = React.useState<boolean>(() => snapshot.value?.followSeat !== false)
+  /** Language switch; re-renders this section when it (or another view) flips it. */
+  const followLocale = useFollowLocale()
   const hueRef = React.useRef<any>(null)
   const svRef = React.useRef<any>(null)
   /**
@@ -329,6 +332,22 @@ export function ColorSection({ form, t }: ColorSectionProps): any {
     }
   }
 
+  /** Toggle whether the plugin's copy follows the DSH interface language. */
+  const toggleFollowLocale = async () => {
+    const next = !followLocale
+    setFollowLocale(next)
+    try {
+      const accepted = await form.set('followLocale', next)
+      if (!accepted) {
+        setFollowLocale(!next)
+        setError(t('color.saveFailed'))
+      }
+    } catch (error: any) {
+      setFollowLocale(!next)
+      setError(error?.message ?? String(error))
+    }
+  }
+
   const modeOption = (mode: Mode) => React.createElement('label', {
     key: mode,
     className: 'sk5c-mode' + (draft.mode === mode ? ' is-on' : ''),
@@ -376,6 +395,18 @@ export function ColorSection({ form, t }: ColorSectionProps): any {
   }
 
   return React.createElement('div', { className: 'sk5c' },
+    React.createElement('div', { className: 'sk5c-locale' },
+      React.createElement('div', { className: 'sk5c-locale-text' },
+        React.createElement('span', { className: 'sk5c-locale-title' }, t('color.followLocale')),
+        React.createElement('span', { className: 'sk5c-locale-hint' }, t('color.followLocale.hint')),
+      ),
+      React.createElement('button', {
+        type: 'button', role: 'switch', id: 'sk5c-follow-locale',
+        'aria-checked': followLocale, 'aria-label': t('color.followLocale'),
+        className: 'sk5c-switch' + (followLocale ? ' is-on' : ''),
+        onClick: () => void toggleFollowLocale(),
+      }, React.createElement('span', { className: 'sk5c-switch-knob', 'aria-hidden': true })),
+    ),
     React.createElement('header', { className: 'sk5c-header' },
       React.createElement('span', { className: 'sk5c-badge-icon' }, icon(ICON_PALETTE)),
       React.createElement('span', null,
@@ -491,7 +522,8 @@ export function ColorSection({ form, t }: ColorSectionProps): any {
         React.createElement('div', { className: 'sk5c-switch-row' },
           React.createElement('span', { className: 'sk5c-switch-text' }, t('color.followSeat')),
           React.createElement('button', {
-            type: 'button', role: 'switch', 'aria-checked': followSeat,
+            type: 'button', role: 'switch', id: 'sk5c-follow-seat',
+            'aria-checked': followSeat, 'aria-label': t('color.followSeat'),
             className: 'sk5c-switch' + (followSeat ? ' is-on' : ''),
             onClick: () => void toggleFollowSeat(),
           }, React.createElement('span', { className: 'sk5c-switch-knob', 'aria-hidden': true })),

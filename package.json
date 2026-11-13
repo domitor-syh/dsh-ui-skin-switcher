@@ -58,6 +58,10 @@
     "locale",
     "cordis.patch.yml",
     "CHANGELOG.md",
-    "icon.png"
+    "LICENSE",
+    "LICENSES",
+    "icon.png",
+    "README.en.md",
+    "README.md"
   ]
 }

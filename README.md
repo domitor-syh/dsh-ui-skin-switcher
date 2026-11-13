@@ -111,3 +111,5 @@ dsh plugin --profile web add @domitor-syh/dsh-ui-skin-switcher
 ## 许可证
 
 [MIT](./LICENSE)
+
+界面内嵌的 Space Grotesk 字体以 SIL OFL 1.1 授权分发，完整许可见 [LICENSES/SpaceGrotesk-OFL.txt](./LICENSES/SpaceGrotesk-OFL.txt)。

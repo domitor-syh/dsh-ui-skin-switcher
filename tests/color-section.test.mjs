@@ -173,7 +173,7 @@ test('stepping the hue to the far right keeps the thumb there instead of wrappin
 })
 test('the follow switch persists and drives the seat attribute', async t => {
   const ui = await mountSection(t)
-  const sw = ui.tree.root.findByProps({ role: 'switch' })
+  const sw = ui.tree.root.findByProps({ id: 'sk5c-follow-seat' })
   assert.equal(sw.props['aria-checked'], true)
   assert.ok(ui.document.attributes.has('data-sk5-follow-seat'))
   await act(async () => {
@@ -182,6 +182,21 @@ test('the follow switch persists and drives the seat attribute', async t => {
   })
   assert.deepEqual(ui.writes[0], ['followSeat', false])
   assert.equal(ui.document.attributes.has('data-sk5-follow-seat'), false)
+})
+
+test('the language switch starts off and only affects the plugin UI, not this panel', async t => {
+  const ui = await mountSection(t)
+  const sw = ui.tree.root.findByProps({ id: 'sk5c-follow-locale' })
+  assert.equal(sw.props['aria-checked'], false)
+  // The panel itself always speaks the host language (the fixture's translator
+  // echoes keys); the switch is only read by the composer seat.
+  assert.match(text(ui.tree.toJSON()), /color\.followLocale/)
+  await act(async () => {
+    sw.props.onClick()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+  assert.deepEqual(ui.writes[0], ['followLocale', true])
+  assert.equal(ui.tree.root.findByProps({ id: 'sk5c-follow-locale' }).props['aria-checked'], true)
 })
 
 test('reset restores the shipped blue and clears every custom slot', async t => {

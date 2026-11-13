@@ -1,6 +1,7 @@
 {
   "meta": {
     "title": "Claude风格 · 推理配置选择器",
-    "description": "Claude Desktop同款风格切换器：换模型、调思考强度，手感好极了。"
+    "description": "Claude Desktop同款风格切换器：换模型、调思考强度，手感好极了。",
+    "detail": "README.md"
   }
 }
