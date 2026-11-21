@@ -41,6 +41,11 @@ const DICTS: Record<'zh' | 'en', Record<string, string>> = {
     'effort.faster': '更快',
     'effort.smarter': '更聪明',
     'menu.models': '模型',
+    'team.label': '启用智能体团队协作',
+    'team.infoLabel': '关于智能体团队协作',
+    'team.description': '通过共享任务板协调多个智能体的分工与进度，复杂任务表现更佳，token 开销也相应更高。',
+    'team.failed': '无法确认智能体团队协作设置已保存，请重试：{message}',
+    'team.unavailable': '当前 DSH 版本未提供智能体团队协作接口',
     'status.loading': '加载中…',
     'status.noModels': '暂无可用模型',
     'help.aria': '思考强度说明',
@@ -87,6 +92,11 @@ const DICTS: Record<'zh' | 'en', Record<string, string>> = {
     'effort.faster': 'Faster',
     'effort.smarter': 'Smarter',
     'menu.models': 'Models',
+    'team.label': 'Enable agent teamwork',
+    'team.infoLabel': 'About agent teamwork',
+    'team.description': 'Coordinate work and progress across agents with a shared task board for better results on complex tasks, with correspondingly higher token costs.',
+    'team.failed': 'Could not confirm the agent teamwork setting was saved. Try again: {message}',
+    'team.unavailable': 'This DSH build exposes no agent-teamwork interface',
     'status.loading': 'Loading…',
     'status.noModels': 'No models available',
     'help.aria': 'About reasoning effort',
@@ -332,6 +342,24 @@ const CSS =
   '.sk5-sq{width:100%;height:100%;border-radius:1px;animation:sk5-flash 1.45s infinite ease-in-out;}' +
   '/* One flash cycle: hold blue 250ms, jump to light, hold light 480ms, fade back over 720ms. */' +
     '@keyframes sk5-flash{0%,29.41%{background:var(--sk5-c-grid,var(--dsw-static-deepseek-500))}29.42%,57.65%{background:var(--flash-light,var(--sk5-c-blink,var(--dsw-static-deepseek-400)))}100%{background:var(--sk5-c-grid,var(--dsw-static-deepseek-500))}}' +
+  /* Team row: the shipped root menu receives this switch from the official
+     `conversation.input.model.options` contribution, and this seat replaces that
+     menu — so the same row is pinned under the seat's own model list instead.
+     Geometry copies the host primitive exactly as the colour panel's switch does. */
+  '.sk5-options{margin:0 6px 8px;padding:8px 2px 0;border-top:1px solid var(--dsw-alias-border-l2);}' +
+  '.sk5-teamRow{display:flex;align-items:center;gap:8px;padding:2px 6px;}' +
+  '.sk5-teamLabel{display:inline-flex;align-items:center;gap:5px;min-width:0;font-size:12.5px;color:var(--dsw-alias-label-primary);text-align:left;}' +
+  '.sk5-teamLabel .sk5-help{margin-left:0;}' +
+  /* The popover sits on the composer, so this tooltip opens upward. */
+  '.sk5-teamLabel .sk5-helpTip{top:auto;bottom:calc(100% + 6px);}' +
+  '.sk5-switch{box-sizing:border-box;position:relative;flex:0 0 auto;width:36px;height:20px;padding:2px;border:0;border-radius:999px!important;corner-shape:round;background:var(--dsw-alias-border-l3,var(--dsw-alias-border-l2));cursor:pointer;margin-left:auto;transition:background-color .16s ease;}' +
+  '.sk5-switch[aria-checked=true]{background:var(--dsw-alias-brand-primary);}' +
+  '.sk5-switch:disabled{cursor:default;opacity:.5;}' +
+  '.sk5-switch:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px;}' +
+  '.sk5-switchKnob{display:block;width:16px;height:16px;border-radius:50%!important;corner-shape:round;background:var(--dsw-alias-label-primary-foreground,#fff);transition:transform .12s ease;}' +
+  '.sk5-switch[aria-checked=false] .sk5-switchKnob{background:var(--dsw-alias-switch-thumb,var(--dsw-alias-label-tertiary));}' +
+  '.sk5-switch[aria-checked=true] .sk5-switchKnob{transform:translate(16px);}' +
+  '.sk5-teamErr{padding:5px 6px 0;font-size:11.5px;line-height:1.45;color:var(--dsw-alias-state-error-primary);text-align:left;}' +
   `/* ===================== Colour switcher (bundle detail page) ===================== */
 /* The section lives in the plugin manager's settings page, so it borrows the host's theme
    tokens instead of shipping a dark-only palette: the same markup then reads correctly in
@@ -418,13 +446,13 @@ const CSS =
    the class renamed under this plugin's prefix: a 36x20 pill whose 16px thumb
    slides 16px. "On" fills with the inverted brand colour, "off" with border-l3,
    and the thumb flips between label-primary-foreground and switch-thumb. */
-.sk5c-switch{box-sizing:border-box;position:relative;flex:0 0 auto;width:36px;height:20px;padding:2px;border:0;border-radius:999px!important;background:var(--dsw-alias-border-l3,var(--sk5c-input));cursor:pointer;transition:background-color .16s ease}
+.sk5c-switch{box-sizing:border-box;position:relative;flex:0 0 auto;width:36px;height:20px;padding:2px;border:0;border-radius:999px!important;corner-shape:round;background:var(--dsw-alias-border-l3,var(--sk5c-input));cursor:pointer;transition:background-color .16s ease}
 .sk5c-switch.is-on{background:var(--dsw-alias-brand-primary,var(--sk5c-primary))}
 .sk5c-switch:disabled{cursor:default;opacity:.5}
 .sk5c-switch:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}
-.sk5c-switch-knob{display:block;width:16px;height:16px;border-radius:50%!important;background:var(--dsw-alias-label-primary-foreground,var(--sk5c-card));transition:transform .12s ease}
+.sk5c-switch-knob{display:block;width:16px;height:16px;border-radius:50%!important;corner-shape:round;background:var(--dsw-alias-label-primary-foreground,var(--sk5c-card));transition:transform .12s ease}
 .sk5c-switch:not(.is-on) .sk5c-switch-knob{background:var(--dsw-alias-switch-thumb,var(--sk5c-tertiary))}
-.sk5c-switch.is-on .sk5c-switch-knob{transform:translateX(16px)}
+.sk5c-switch.is-on .sk5c-switch-knob{transform:translate(16px)}
 .sk5c-actions{display:flex;gap:8px;margin-top:12px}
 .sk5c-reset{height:32px;padding:0 12px;border:1px solid var(--sk5c-input);border-radius:8px!important;background:transparent;color:var(--sk5c-fg);font-size:12.5px;cursor:pointer}
 .sk5c-reset:hover:not(:disabled){background:var(--sk5c-inset)}
@@ -629,6 +657,38 @@ export function apply(ctx: any): void {
   const runtimeSessions = ctx.sessions as {
     subagentAddress: (sessionId: string) => string | undefined
   }
+  /**
+   * The typed Client Remote namespace that saves the Team selection. `agentTeams`
+   * is a dotted service (`remote.agentTeams`), not a property that exists on the
+   * `remote` service, and it must not be declared in the plugin's hard `inject`:
+   * a host without agent teams would then park this whole fiber in PENDING.
+   * `ctx.inject` on the other hand only defers this one effect until the service
+   * appears, so the seat keeps running and the row reports the absence.
+   */
+  let teamApi: any
+  /** Accept both shapes: the nested property and the literal dotted key. */
+  const takeTeamApi = (scope: any): any => {
+    if (scope === undefined || scope === null) return undefined
+    const direct = scope['remote.agentTeams']
+    if (direct !== undefined && direct !== null) return direct
+    const nested = scope.remote
+    return nested === undefined || nested === null ? undefined : nested.agentTeams
+  }
+  if (typeof ctx.inject === 'function') {
+    ctx.inject(['remote.agentTeams'], (sub: any) => {
+      const api = takeTeamApi(sub)
+      if (api === undefined) return () => {}
+      teamApi = api
+      return () => { if (teamApi === api) teamApi = undefined }
+    })
+  }
+  const teamRemote = (): any => {
+    if (teamApi !== undefined && teamApi !== null) return teamApi
+    const fromContext = takeTeamApi(ctx)
+    if (fromContext !== undefined && fromContext !== null) return fromContext
+    const host = ctx as any
+    return typeof host.get === 'function' ? host.get('remote.agentTeams') : undefined
+  }
 
   ctx.effect(() => injectCss(CSS))
   ctx.effect(() => ctx.locale.register(NS, DICTS), 'ui-skin-switcher: dictionaries')
@@ -704,6 +764,21 @@ export function apply(ctx: any): void {
       const [settledIdx, setSettledIdx] = React.useState<any>(null)
       /** Live palette from the plugin's own settings; null keeps the shipped colours. */
       const paletteColors = usePaletteColors()
+      /**
+       * Team mode. The shipped root menu gets this row from its
+       * `conversation.input.model.options` child slot; this seat replaces that
+       * menu outright, so it renders the row itself and reads the same
+       * `agentTeam` projection plus the same `remote.agentTeams` call the
+       * official switch uses. A host without that projection (older builds)
+       * leaves the row out instead of showing a dead control.
+       */
+      const useProjection = typeof (props as any).useProjection === 'function'
+        ? (props as any).useProjection
+        : null
+      const team = useProjection === null ? undefined : useProjection('agentTeam')
+      const [teamPending, setTeamPending] = React.useState(false)
+      const [teamError, setTeamError] = React.useState<string | null>(null)
+      React.useEffect(() => { if (menu === null) setTeamError(null) }, [menu])
 
       /** This session's shared directory — the official selector's own data source. */
       const directory = React.useMemo(() => directoryOf(sessionId), [sessionId])
@@ -1069,6 +1144,33 @@ export function apply(ctx: any): void {
           ...(effort === undefined ? {} : { reasoningEffort: effort }),
         }, true)
       }
+      /**
+       * Save the Team selection exactly as the official row does: the Remote
+       * answers with an outcome envelope, so a refusal resolves with `ok: false`
+       * instead of rejecting, and only a transport throw lands in the catch.
+       */
+      const onToggleTeam = (enabled: boolean) => {
+        if (teamPending || busyRef.current) return
+        const api = teamRemote()
+        if (api === undefined || typeof api.setEnabled !== 'function') {
+          // Never drop the click silently: an absent namespace is the one state
+          // only the user can see, so it has to show up in the row itself.
+          setTeamError(tr('team.unavailable'))
+          return
+        }
+        setTeamPending(true)
+        setTeamError(null)
+        // The call is started inside the chain so a synchronous throw from the
+        // service lands in the same rejection path as a transport failure.
+        Promise.resolve().then(() => api.setEnabled(sessionId, enabled)).then((outcome: any) => {
+          if (outcome !== undefined && outcome !== null && outcome.ok === false) {
+            const detail = outcome.error !== undefined && outcome.error !== null ? outcome.error.message : ''
+            setTeamError(tr('team.failed').replace('{message}', detail === undefined ? '' : String(detail)))
+          }
+        }, (err: unknown) => {
+          setTeamError(tr('team.failed').replace('{message}', msg(err)))
+        }).finally(() => { setTeamPending(false) })
+      }
 
       const idxFromEvent = (ev: MouseEvent) => {
         const el = trackRef.current
@@ -1120,6 +1222,48 @@ export function apply(ctx: any): void {
         window.addEventListener('blur', onWinCancel as any)
       }
 
+      /**
+       * The Team switch that the shipped root menu renders under its model and
+       * effort rows. Pinned below the scrolling model list so it never scrolls
+       * out of reach, and omitted entirely on hosts that publish no `agentTeam`
+       * projection. Subagent sessions returned above, matching the official row.
+       */
+      const teamRow = team === undefined
+        ? null
+        : React.createElement('div', { className: 'sk5-options' },
+            React.createElement('div', { className: 'sk5-teamRow' },
+              React.createElement('span', { className: 'sk5-teamLabel' },
+                React.createElement('span', null, tr('team.label')),
+                React.createElement('div', { className: 'sk5-help' },
+                  React.createElement('button', {
+                    type: 'button', className: 'sk5-helpBtn', 'aria-label': tr('team.infoLabel'),
+                  },
+                    React.createElement('svg', { className: 'sk5-helpRing', viewBox: '0 0 16 16', 'aria-hidden': 'true' },
+                      React.createElement('circle', {
+                        cx: 8, cy: 8, r: 7.35, fill: 'none', stroke: 'currentColor', strokeWidth: 0.75,
+                      }),
+                    ),
+                    React.createElement('span', { className: 'sk5-helpQ' }, 'i'),
+                  ),
+                  React.createElement('div', { className: 'sk5-helpTip' },
+                    React.createElement('div', { className: 'sk5-helpTitle' }, tr('team.infoLabel')),
+                    React.createElement('div', { className: 'sk5-helpText' }, tr('team.description')),
+                  ),
+                ),
+              ),
+              React.createElement('button', {
+                type: 'button', role: 'switch',
+                'aria-checked': team.enabled === true,
+                'aria-label': tr('team.label'),
+                title: tr('team.label'),
+                disabled: locked || teamPending,
+                className: 'sk5-switch',
+                onClick: () => onToggleTeam(team.enabled !== true),
+              }, React.createElement('span', { className: 'sk5-switchKnob' })),
+            ),
+            teamError === null ? null : React.createElement('div', { className: 'sk5-teamErr' }, teamError),
+          )
+
       const triggerTitle = curGroup !== undefined && curModel !== undefined
         ? curGroup.name + ' / ' + curModel.name + (effectiveEffort !== undefined ? ' · ' + displayLabel : '')
         : tr('trigger.selectModel')
@@ -1169,6 +1313,7 @@ export function apply(ctx: any): void {
                   }),
                 )) : null,
               ),
+              teamRow,
             )
           : null,
         menu === 'effort'

@@ -10,7 +10,7 @@ const bundle = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8'
 // Exercise the built Client with real React hooks and injected DSH service
 // fixtures. This does not claim browser/visual coverage; registration against
 // published DSH SlotCore versions is checked separately.
-async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true }, measureFonts = false, localeActive = '', documentLang = '', followLocale = false } = {}) {
+async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true }, measureFonts = false, localeActive = '', documentLang = '', followLocale = false, teamProjection = undefined, teamOutcome = { ok: true }, teamRemoteShape = 'injected' } = {}) {
   const subscribers = new Set()
   const measuredNodes = []
   const samples = new Set()
@@ -44,6 +44,9 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
     }
   }
   const selections = []
+  // Team mode: the projection the host publishes for the open session, and the
+  // `remote.agentTeams.setEnabled` calls the official switch would make.
+  const teamCalls = []
   const official = {
     id: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash',
     reasoning: { defaultEffort: 'off', efforts: [{ id: 'off', name: 'Off' }, { id: 'max', name: 'Max' }] },
@@ -121,13 +124,34 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
     : undefined
   let registration
   let Component
+  const agentTeams = {
+    setEnabled: async (sessionId, enabled) => {
+      teamCalls.push({ sessionId, enabled })
+      return teamOutcome
+    },
+  }
+  // The real host exposes the Team Remote as the dotted service
+  // `remote.agentTeams`, which arrives through `ctx.inject`; `get()` and the
+  // plain `remote` property are only fallbacks. Every shape, and neither, is covered.
+  const remoteShapes = {
+    injected: {},
+    mounted: { get: key => (key === 'remote.agentTeams' ? agentTeams : undefined) },
+    service: { get: () => undefined, remote: { agentTeams } },
+    absent: { get: () => undefined },
+  }
   client.apply({
+    ...remoteShapes[teamRemoteShape],
     modelDirectories: { directoryFor: () => directory },
     sessions: { subagentAddress: () => undefined },
     effect: () => () => {}, // Styles/dictionaries belong to browser integration checks.
-    inject: forms === undefined ? undefined : (deps, callback) => {
+    inject: (deps, callback) => {
       assert.equal(deps.length, 1)
+      if (deps[0] === 'remote.agentTeams') {
+        if (teamRemoteShape === 'injected') callback({ remote: { agentTeams } })
+        return () => {}
+      }
       assert.equal(deps[0], 'configForms')
+      if (forms === undefined) return () => {}
       callback({
         configForms: forms,
         effect: (factory) => {
@@ -158,7 +182,13 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
     },
   })
   let tree
-  const render = () => React.createElement(Component, { locked: false, sessionId: 'session-test' })
+  const render = () => React.createElement(Component, {
+    locked: false,
+    sessionId: 'session-test',
+    // The shipped seat receives the session hook set; a host without the Team
+    // projection simply omits the key, which must keep the row out of the menu.
+    useProjection: teamProjection === undefined ? undefined : key => (key === 'agentTeam' ? teamProjection : undefined),
+  })
   await act(async () => { tree = TestRenderer.create(render(), {
     createNodeMock: element => {
       if (!measureFonts) return null
@@ -173,11 +203,12 @@ async function mount(t, { currentModel = 'deepseek-flash', outcome = { ok: true 
   }) })
   t.after(() => { act(() => tree.unmount()); assert.equal(subscribers.size, 0); assert.equal(samples.size, 0) })
   return {
-    tree, selections, measuredNodes, samples,
+    tree, selections, measuredNodes, samples, teamCalls,
     async fontLoaded(next) { fontHeights = next; await act(async () => fonts.dispatchEvent(new Event('loadingdone'))) },
     official,
     snapshot: () => snapshot,
     async showModels() { await act(async () => tree.root.findByProps({ className: 'sk5-trigger' }).props.onClick()) },
+    async toggleTeam() { await act(async () => tree.root.findByProps({ role: 'switch' }).props.onClick()) },
     async releasePointer() { await act(async () => browser.dispatchEvent(new Event('pointerup'))) },
     async update(next) { await act(async () => publish(next)) },
   }
@@ -349,4 +380,62 @@ test('a Remote envelope failure remains visible for retry', async t => {
   await act(async () => ui.tree.root.findAllByProps({ role: 'menuitem' })[1].props.onClick())
   assert.match(text(ui.tree.toJSON()), /session\/writer-held: Session in use/)
   assert.equal(ui.tree.root.findAllByProps({ role: 'menu' }).length, 1)
+})
+
+test('the team row mirrors the state and copy of the official options contribution', async t => {
+  const ui = await mount(t, { teamProjection: { enabled: true, tasks: [] } })
+  await ui.showModels()
+  const toggle = () => ui.tree.root.findByProps({ role: 'switch' })
+  assert.equal(toggle().props['aria-checked'], true)
+  assert.equal(toggle().props.className, 'sk5-switch')
+  assert.equal(toggle().props.disabled, false)
+  const copy = text(ui.tree.toJSON())
+  assert.match(copy, /Enable agent teamwork/)
+  assert.match(copy, /shared task board/)
+  // The row is pinned outside the scrolling list, so a long catalog never hides it.
+  const list = ui.tree.root.findByProps({ className: 'sk5-list' })
+  assert.equal(list.findAllByProps({ role: 'switch' }).length, 0)
+})
+
+test('the team row stays out when the host publishes no agentTeam projection', async t => {
+  const ui = await mount(t)
+  await ui.showModels()
+  assert.equal(ui.tree.root.findAllByProps({ role: 'switch' }).length, 0)
+})
+
+test('the team row saves the flipped selection through remote.agentTeams', async t => {
+  const ui = await mount(t, { teamProjection: { enabled: false, tasks: [] } })
+  await ui.showModels()
+  await ui.toggleTeam()
+  assert.deepEqual(ui.teamCalls, [{ sessionId: 'session-test', enabled: true }])
+  assert.equal(ui.tree.root.findByProps({ role: 'switch' }).props['aria-checked'], false, 'Wait for the projection, never paint optimistically')
+})
+
+test('a refused team selection keeps the menu open and shows the failure', async t => {
+  const ui = await mount(t, {
+    teamProjection: { enabled: false, tasks: [] },
+    teamOutcome: { ok: false, error: { code: 'team/denied', message: 'Team is locked' } },
+  })
+  await ui.showModels()
+  await ui.toggleTeam()
+  assert.match(text(ui.tree.toJSON()), /Team is locked/)
+  assert.equal(ui.tree.root.findAllByProps({ role: 'menu' }).length, 1)
+  assert.equal(ui.tree.root.findByProps({ role: 'switch' }).props.disabled, false, 'A refusal must leave the switch usable')
+})
+
+test('the team row saves through the plain remote property when no dotted accessor exists', async t => {
+  const ui = await mount(t, { teamProjection: { enabled: false, tasks: [] }, teamRemoteShape: 'service' })
+  await ui.showModels()
+  await ui.toggleTeam()
+  assert.deepEqual(ui.teamCalls, [{ sessionId: 'session-test', enabled: true }])
+  assert.doesNotMatch(text(ui.tree.toJSON()), /no agent-teamwork interface/)
+})
+
+test('an absent Team remote reports itself instead of swallowing the click', async t => {
+  const ui = await mount(t, { teamProjection: { enabled: false, tasks: [] }, teamRemoteShape: 'absent' })
+  await ui.showModels()
+  await ui.toggleTeam()
+  assert.equal(ui.teamCalls.length, 0)
+  assert.match(text(ui.tree.toJSON()), /no agent-teamwork interface/)
+  assert.equal(ui.tree.root.findByProps({ role: 'switch' }).props.disabled, false)
 })

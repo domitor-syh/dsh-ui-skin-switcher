@@ -4,6 +4,18 @@
 
 This project follows [Semantic Versioning](https://semver.org/). Pick a version below to see what changed.
 
+## [0.3.2] — 2026-11-21
+
+**中文**
+
+- 修复模型弹层里看不到「启用智能体团队协作」开关的问题：官方把它放在根菜单的 `conversation.input.model.options` 插槽里，而本插件整体替换了那个菜单，于是这一行跟着消失。现已在模型弹层底部补回（含 `ⓘ` 说明），读写同一份会话团队状态，位置与官方一致。
+- 同步按钮样式：开关几何与官方对齐（36×20 胶囊、16px 圆形滑块、`corner-shape:round`、由 `aria-checked` 驱动开关态与滑块位移、焦点环用宿主令牌）；详情页「跟随DSH系统界面语言」「最高思考强度文字跟随档位值颜色」两个开关一并同步。
+
+**English**
+
+- Fixed the "Enable agent teamwork" switch missing from the model popover: the official row lives in the root menu's `conversation.input.model.options` slot, which this plugin replaces outright, so it disappeared with that menu. It is now restored at the bottom of the model popover (with its `ⓘ` explanation), reading and writing the same session Team state in the same place as the official row.
+- Synced the switch styling: geometry now matches the shipped switch (36×20 pill, 16px circular thumb, `corner-shape:round`, `aria-checked` driving both the on-state and the thumb travel, focus ring from the host tokens); the two detail-page switches follow the same geometry.
+
 ## [0.3.1] — 2026-11-13
 
 **中文**
